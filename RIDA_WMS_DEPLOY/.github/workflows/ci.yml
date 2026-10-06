@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: RIDA_WMS_TEST
+      DB_USERNAME: irms_app
+      DB_PASSWORD: ci_only_password
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native PostgreSQL 18
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ca-certificates curl
+          sudo install --directory /usr/share/postgresql-common/pgdg
+          sudo curl --fail --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-18
+          sudo systemctl stop postgresql || true
+          sudo pg_conftool 18 main set port 5432
+          sudo pg_ctlcluster 18 main start
+          sudo -u postgres psql -p 5432 -c "CREATE ROLE irms_app WITH LOGIN PASSWORD 'ci_only_password';"
+          sudo -u postgres createdb --port=5432 --owner=irms_app RIDA_WMS_TEST
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: ctype, dom, fileinfo, gd, mbstring, pdo_pgsql, pgsql, simplexml, xml, xmlreader, xmlwriter, zip
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Validate Composer and advisories
+        run: |
+          composer validate --no-check-publish
+          composer audit
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Audit JavaScript dependencies
+        run: npm audit
+
+      - name: Configure test application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run feature and unit tests
+        run: php artisan test
+
+      - name: Build frontend assets
+        run: npm run build

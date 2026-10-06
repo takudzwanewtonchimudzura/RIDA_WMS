@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title', 'Consumable Usage Reports')
+@section('page-title', 'Consumables')
+@section('content')
+<div class="container-fluid"><div class="d-flex justify-content-between align-items-end mb-4"><div><p class="text-uppercase text-muted small fw-semibold mb-1">Field consumption</p><h1 class="h3 mb-0">Usage reports</h1></div>@if(!auth()->user()->isViewer())<a href="{{ route('consumables.usage-reports.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1" aria-hidden="true"></i>Record usage</a>@endif</div>
+    <div class="d-flex gap-2 mb-3"><a class="btn btn-outline-secondary btn-sm" href="{{ route('consumables.usage-reports.report') }}">Summary</a><a class="btn btn-outline-secondary btn-sm" href="{{ route('consumables.usage-reports.export') }}">Export CSV</a></div>
+    <div class="table-responsive border rounded bg-white"><table class="table table-hover align-middle mb-0"><thead><tr><th>Report</th><th>Work date</th><th>Project</th><th>Location</th><th>Work</th><th></th></tr></thead><tbody>@forelse($reports as $report)<tr><td class="fw-semibold">{{ $report->report_number }}</td><td>{{ $report->date_of_work->format('d M Y') }}</td><td>{{ $report->project_name }}</td><td>{{ $report->village }}, Ward {{ $report->ward }}</td><td>{{ \Illuminate\Support\Str::limit($report->work_description, 80) }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ route('consumables.usage-reports.show', $report) }}">Open</a></td></tr>@empty<tr><td colspan="6" class="text-center py-5 text-muted">No usage reports.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $reports->links() }}</div></div>
+@endsection

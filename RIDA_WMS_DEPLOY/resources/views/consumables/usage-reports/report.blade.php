@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title', 'Consumables Usage Summary')
+@section('page-title', 'Consumables')
+@section('content')
+<div class="container-fluid"><div class="mb-4"><a href="{{ route('consumables.usage-reports.index') }}" class="small text-muted text-decoration-none"><i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Usage reports</a><h1 class="h3 mt-2">Usage summary</h1></div><div class="row g-3 mb-4"><div class="col-md-6"><div class="border rounded p-3 bg-white"><div class="small text-muted">Reports in selected period</div><div class="h3 mb-0">{{ $summary['total_reports'] }}</div></div></div><div class="col-md-6"><div class="border rounded p-3 bg-white"><div class="small text-muted">Total units used</div><div class="h3 mb-0">{{ $summary['total_items_used'] }}</div></div></div></div><div class="table-responsive border rounded bg-white"><table class="table mb-0"><thead><tr><th>Consumable</th><th>Total used</th><th>Recorded value</th></tr></thead><tbody>@forelse($summary['top_consumables'] as $item)<tr><td>{{ $item['name'] }}</td><td>{{ $item['total_used'] }}</td><td>{{ number_format($item['cost'], 2) }}</td></tr>@empty<tr><td colspan="3" class="text-center py-4 text-muted">No usage data for this period.</td></tr>@endforelse</tbody></table></div></div>
+@endsection

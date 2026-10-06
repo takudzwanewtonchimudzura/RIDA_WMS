@@ -1,0 +1,18 @@
+See README.md for current local setup and deployment guidance.
+
+Do not use fixed or shared administrator credentials. Configure a unique
+INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD in the private .env file for
+first-time setup, run the database seeder once, then remove those bootstrap
+credentials. Public self-registration is disabled.
+
+Test access accounts (administrator, operator, viewer) are for RIDA_WMS_TEST
+only. Their generated passwords are stored in the private, git-ignored file
+storage/app/private/access-test-credentials.txt. Do not copy these passwords
+into this file, source control, or production. To rotate them, set
+APP_ENV=testing and DB_DATABASE=RIDA_WMS_TEST, then run:
+
+	php artisan db:seed --class=AccessLevelTestSeeder
+
+The seeder refuses to run unless both the testing environment and test database
+are selected. The role rights are listed alongside each account in the private
+credential sheet.

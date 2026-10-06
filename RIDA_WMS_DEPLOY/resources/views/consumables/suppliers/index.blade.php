@@ -1,0 +1,6 @@
+@extends('layouts.app')
+@section('title', 'Suppliers')
+@section('page-title', 'Consumables')
+@section('content')
+<div class="container-fluid"><div class="d-flex justify-content-between align-items-end mb-4"><div><p class="text-uppercase text-muted small fw-semibold mb-1">Procurement directory</p><h1 class="h3 mb-0">Suppliers</h1></div><a href="{{ route('consumables.suppliers.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1" aria-hidden="true"></i>Add supplier</a></div><div class="table-responsive border rounded bg-white"><table class="table align-middle mb-0"><thead><tr><th>Supplier</th><th>Contact</th><th>Email</th><th>Phone</th><th>Status</th><th></th></tr></thead><tbody>@forelse($suppliers as $supplier)<tr><td>{{ $supplier->name }}</td><td>{{ $supplier->contact_person }}</td><td>{{ $supplier->email ?: '—' }}</td><td>{{ $supplier->phone ?: '—' }}</td><td>{{ ucfirst($supplier->status) }}</td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('consumables.suppliers.show', $supplier) }}">Open</a></td></tr>@empty<tr><td colspan="6" class="text-center py-4 text-muted">No suppliers.</td></tr>@endforelse</tbody></table></div><div class="mt-3">{{ $suppliers->links() }}</div></div>
+@endsection
