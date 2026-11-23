@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(IrrigationSchemeSeeder::class);
         $this->call(PipedWaterSchemeSeeder::class);
         $this->call(WaterPointSeeder::class);
+        $this->call(UatScenarioSeeder::class);
     }
 }

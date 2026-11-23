@@ -21,9 +21,6 @@
                     </div>
                     <h3 class="kpi-value">{{ number_format($totalBoreholes) }}</h3>
                     <p class="kpi-label">Total Boreholes</p>
-                    <div class="kpi-trend text-success">
-                        <i class="fas fa-arrow-up"></i> 12% vs last period
-                    </div>
                 </div>
             </div>
         </div>
@@ -35,9 +32,6 @@
                     </div>
                     <h3 class="kpi-value">{{ number_format($averageYield, 2) }} L/s</h3>
                     <p class="kpi-label">Average Yield</p>
-                    <div class="kpi-trend text-info">
-                        <i class="fas fa-arrow-up"></i> 5% improvement
-                    </div>
                 </div>
             </div>
         </div>
@@ -49,9 +43,6 @@
                     </div>
                     <h3 class="kpi-value">{{ number_format($totalBeneficiaries) }}</h3>
                     <p class="kpi-label">Beneficiaries Served</p>
-                    <div class="kpi-trend text-success">
-                        <i class="fas fa-arrow-up"></i> 8% increase
-                    </div>
                 </div>
             </div>
         </div>
@@ -62,10 +53,7 @@
                         <i class="fas fa-dollar-sign fa-2x"></i>
                     </div>
                     <h3 class="kpi-value">${{ number_format($totalInvestment, 2) }}</h3>
-                    <p class="kpi-label">Total Investment</p>
-                    <div class="kpi-trend text-success">
-                        <i class="fas fa-arrow-up"></i> 15% vs budget
-                    </div>
+                    <p class="kpi-label">Total Investment (USD records only)</p>
                 </div>
             </div>
         </div>
@@ -162,8 +150,8 @@
                                     <td><strong>{{ $borehole->borehole_serial_no }}</strong></td>
                                     <td>{{ $borehole->province }}</td>
                                     <td>{{ $borehole->admin_district }}</td>
-                                    <td class="text-end">{{ number_format($borehole->final_borehole_depth_m ?? $borehole->final_borehole_depth ?? 0, 1) }}</td>
-                                    <td class="text-end">{{ number_format($borehole->yield_lps, 2) }}</td>
+                                    <td class="text-end">{{ $borehole->recorded_depth === null ? 'N/A' : number_format($borehole->recorded_depth, 1) }}</td>
+                                    <td class="text-end">{{ $borehole->recorded_yield === null ? 'N/A' : number_format($borehole->recorded_yield, 2) }}</td>
                                     <td class="text-end">{{ $borehole->formatted_total_cost }}</td>
                                     <td>
                                         <span class="badge bg-{{ $borehole->approved_at ? 'success' : 'warning' }}">
@@ -197,18 +185,14 @@
                             <ul class="list-unstyled">
                                 <li>✓ {{ $achievements['boreholes_completed'] }} boreholes completed this period</li>
                                 <li>✓ {{ $achievements['success_rate'] }}% success rate in drilling operations</li>
-                                <li>✓ {{ $achievements['water_quality'] }}% meet water quality standards</li>
-                                <li>✓ ${{ number_format($achievements['cost_savings']) }} under budget</li>
+                                <li>{{ $achievements['water_quality'] }}% of records meet the recorded pH, TDS and turbidity screening limits</li>
+                                <li>{{ $achievements['quality_tested'] }} records have all three readings. Missing readings do not count as compliant.</li>
+                                <li class="small text-muted">Screening: pH {{ config('rwims.ph_min') }}–{{ config('rwims.ph_max') }}, TDS ≤{{ config('rwims.tds_max') }} mg/L, turbidity ≤{{ config('rwims.turbidity_max') }} NTU. This is not full drinking-water certification.</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <h6>Recommendations</h6>
-                            <ul class="list-unstyled">
-                                <li>• Focus on {{ $recommendations['focus_province'] }} for next phase</li>
-                                <li>• Improve yield rates in {{ $recommendations['low_yield_region'] }}</li>
-                                <li>• Consider {{ $recommendations['technology'] }} for challenging geology</li>
-                                <li>• Allocate additional ${{ number_format($recommendations['additional_funding']) }} for maintenance</li>
-                            </ul>
+                            <h6>Planning note</h6>
+                            <p>Funding and regional priorities require an approved budget and engineering review; no automated recommendation is made.</p>
                         </div>
                     </div>
                 </div>

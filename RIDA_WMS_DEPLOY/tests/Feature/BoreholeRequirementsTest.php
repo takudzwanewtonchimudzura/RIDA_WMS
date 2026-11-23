@@ -20,10 +20,8 @@ class BoreholeRequirementsTest extends TestCase
 
         $response = $this->postJson(route('boreholes.store'), [
             'borehole_serial_no' => 'BH-REQ-001',
-            'province' => 'Harare Province',
-            'admin_district' => 'North District',
+            ...$this->location(true),
             'locality' => 'Chigo A',
-            'ward' => '4',
             'village' => 'Chigo A',
             'date' => '2026-09-25',
             'blowing_yield' => 2.5,
@@ -109,10 +107,8 @@ class BoreholeRequirementsTest extends TestCase
 
         $this->put(route('boreholes.update', $borehole), [
             'borehole_serial_no' => 'BH-REQ-001',
-            'province' => 'Harare Province',
-            'admin_district' => 'North District',
+            ...$this->location(true),
             'locality' => 'Chigo A',
-            'ward' => '4',
             'village' => 'Chigo B',
             'date' => '2026-09-25',
             'blowing_yield' => 3.1,

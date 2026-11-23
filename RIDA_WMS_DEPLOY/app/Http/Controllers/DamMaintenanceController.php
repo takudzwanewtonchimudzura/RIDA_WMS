@@ -20,7 +20,7 @@ class DamMaintenanceController extends Controller
         $this->authorizeRecordView($request, $dam);
         $maintenanceRecords = $dam->maintenanceRecords()
             ->orderBy('maintenance_date', 'desc')
-            ->paginate(15);
+            ->paginate(config('rwims.default_page_size'));
         
         $stats = [
             'total' => $dam->maintenanceRecords()->count(),
@@ -71,8 +71,8 @@ class DamMaintenanceController extends Controller
             'stone_pitching_replaced' => 'boolean',
             'star_grass_replanted' => 'boolean',
             'other_works' => 'nullable|string|max:2000',
-            'estimated_cost' => 'nullable|numeric|min:0',
-            'actual_cost' => 'nullable|numeric|min:0',
+            'estimated_cost' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
+            'actual_cost' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'contractor_name' => 'nullable|string|max:255',
             'contractor_contact' => 'nullable|string|max:255',
             'status' => 'required|in:planned,in_progress,completed,cancelled',
@@ -139,8 +139,8 @@ class DamMaintenanceController extends Controller
             'stone_pitching_replaced' => 'boolean',
             'star_grass_replanted' => 'boolean',
             'other_works' => 'nullable|string|max:2000',
-            'estimated_cost' => 'nullable|numeric|min:0',
-            'actual_cost' => 'nullable|numeric|min:0',
+            'estimated_cost' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
+            'actual_cost' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'contractor_name' => 'nullable|string|max:255',
             'contractor_contact' => 'nullable|string|max:255',
             'status' => 'required|in:planned,in_progress,completed,cancelled',

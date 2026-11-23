@@ -42,7 +42,7 @@ class InventoryController extends Controller
             });
         }
 
-        $consumables = $query->paginate(20);
+        $consumables = $query->paginate(config('rwims.default_page_size'));
         $categories = ConsumableCategory::all();
 
         return view('consumables.inventory.index', compact('consumables', 'categories'));
@@ -50,7 +50,7 @@ class InventoryController extends Controller
 
     public function create()
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->canManageStores(), 403);
         $categories = ConsumableCategory::all();
         $suppliers = Supplier::where('status', 'active')->get();
         return view('consumables.inventory.create', compact('categories', 'suppliers'));
@@ -58,14 +58,14 @@ class InventoryController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:consumables',
             'category_id' => 'required|exists:consumable_categories,id',
             'description' => 'nullable|string',
             'unit' => 'required|string',
-            'unit_cost' => 'required|numeric|min:0',
+            'unit_cost' => 'required|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'minimum_stock' => 'required|integer|min:0',
             'initial_quantity' => 'required|integer|min:0',
             'location' => 'nullable|string',
@@ -132,21 +132,21 @@ class InventoryController extends Controller
 
     public function edit(Consumable $consumable)
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->canManageStores(), 403);
         $categories = ConsumableCategory::all();
         return view('consumables.inventory.edit', compact('consumable', 'categories'));
     }
 
     public function update(Request $request, Consumable $consumable)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:consumables,code,' . $consumable->id,
             'category_id' => 'required|exists:consumable_categories,id',
             'description' => 'nullable|string',
             'unit' => 'required|string',
-            'unit_cost' => 'required|numeric|min:0',
+            'unit_cost' => 'required|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'minimum_stock' => 'required|integer|min:0',
             'status' => 'required|in:active,inactive',
         ]);
@@ -159,7 +159,7 @@ class InventoryController extends Controller
 
     public function adjustStock(Request $request, Consumable $consumable)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'adjustment_type' => 'required|in:add,remove',
             'quantity' => 'required|integer|min:1',
@@ -226,11 +226,11 @@ class StockRequestController extends Controller
 
         // Add user filtering for non-admins
         $user = auth()->user();
-        if (!$user->isAdmin()) {
+        if (!$user->canApprove() && !$user->canManageStores()) {
             $query->where('user_id', $user->id);
         }
 
-        $requests = $query->latest()->paginate(20);
+        $requests = $query->latest()->paginate(config('rwims.default_page_size'));
         
         // Use array directly instead of UsageReport::PROJECT_TYPES
         $projectTypes = [
@@ -305,7 +305,7 @@ class StockRequestController extends Controller
 
     public function show(Request $request, StockRequest $stockRequest)
     {
-        abort_unless($request->user()->isAdmin() || (int) $stockRequest->user_id === (int) $request->user()->id, 403);
+        abort_unless($request->user()->canApprove() || $request->user()->canManageStores() || (int) $stockRequest->user_id === (int) $request->user()->id, 403);
         $stockRequest->load(['items.consumable']);
         return view('consumables.stock-requests.show', compact('stockRequest'));
     }
@@ -314,7 +314,7 @@ class StockRequestController extends Controller
     {
         // Check authorization
         $user = auth()->user();
-        if (!$user->isAdmin()) {
+        if (!$user->canApprove() || (int) $stockRequest->user_id === (int) $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -326,6 +326,7 @@ class StockRequestController extends Controller
 
         DB::transaction(function () use ($stockRequest, $validated, $request) {
             $stockRequest = StockRequest::query()->lockForUpdate()->findOrFail($stockRequest->id);
+            abort_unless($stockRequest->status === 'pending', 422, 'Only pending stock requests may be approved.');
             foreach ($validated['items'] as $itemId => $itemData) {
                 $requestItem = $stockRequest->items()->find($itemId);
                 if ($requestItem) {
@@ -365,7 +366,7 @@ class StockRequestController extends Controller
     {
         // Check authorization
         $user = auth()->user();
-        if (!$user->isAdmin()) {
+        if (!$user->canManageStores()) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -431,7 +432,7 @@ class StockRequestController extends Controller
     {
         // Check authorization
         $user = auth()->user();
-        if (!$user->isAdmin()) {
+        if (!$user->canApprove() || (int) $stockRequest->user_id === (int) $user->id) {
             abort(403, 'Unauthorized action.');
         }
         abort_unless($stockRequest->status === 'pending', 422, 'Only pending stock requests can be rejected.');
@@ -459,7 +460,7 @@ class SupplierController extends Controller
 {
     public function index(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $query = Supplier::query()
             ->when($request->filled('search'), function ($q, $search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -470,20 +471,20 @@ class SupplierController extends Controller
                 $q->where('status', $status);
             });
 
-        $suppliers = $query->latest()->paginate(20);
+        $suppliers = $query->latest()->paginate(config('rwims.default_page_size'));
 
         return view('consumables.suppliers.index', compact('suppliers'));
     }
 
     public function create()
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->canManageStores(), 403);
         return view('consumables.suppliers.create');
     }
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:suppliers',
             'contact_person' => 'required|string|max:255',
@@ -501,13 +502,13 @@ class SupplierController extends Controller
 
     public function edit(Supplier $supplier)
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->canManageStores(), 403);
         return view('consumables.suppliers.edit', compact('supplier'));
     }
 
     public function update(Request $request, Supplier $supplier)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:suppliers,name,' . $supplier->id,
             'contact_person' => 'required|string|max:255',
@@ -526,14 +527,14 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->canManageStores(), 403);
         $supplier->load('purchaseOrders');
         return view('consumables.suppliers.show', compact('supplier'));
     }
 
     public function destroy(Request $request, Supplier $supplier)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         // Check if supplier has associated consumables
         if (Inventory::where('supplier_id', $supplier->id)->exists()) {
             return redirect()->route('consumables.suppliers.index')
@@ -596,7 +597,7 @@ class UsageReportController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $reports = $query->latest()->paginate(20);
+        $reports = $query->latest()->paginate(config('rwims.default_page_size'));
 
         return view('consumables.usage-reports.index', compact('reports'))
             ->with('projectTypes', $this->projectTypes)
@@ -856,20 +857,20 @@ class ConsumableCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
-        $categories = ConsumableCategory::withCount('consumables')->paginate(20);
+        abort_unless($request->user()->canManageStores(), 403);
+        $categories = ConsumableCategory::withCount('consumables')->paginate(config('rwims.default_page_size'));
         return view('consumables.categories.index', compact('categories'));
     }
 
     public function create(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         return view('consumables.categories.create');
     }
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:consumable_categories',
             'description' => 'nullable|string',
@@ -883,13 +884,13 @@ class ConsumableCategoryController extends Controller
 
     public function edit(Request $request, ConsumableCategory $category)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         return view('consumables.categories.edit', compact('category'));
     }
 
     public function update(Request $request, ConsumableCategory $category)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:consumable_categories,name,' . $category->id,
             'description' => 'nullable|string',
@@ -903,7 +904,7 @@ class ConsumableCategoryController extends Controller
 
     public function destroy(Request $request, ConsumableCategory $category)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageStores(), 403);
         if ($category->consumables()->count() > 0) {
             return redirect()->route('consumables.categories.index')
                 ->with('error', 'Cannot delete category with associated consumables');

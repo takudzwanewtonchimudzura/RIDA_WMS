@@ -23,12 +23,15 @@ class DemoUserSeeder extends Seeder
         $password = env('DEMO_USER_PASSWORD') ?: bin2hex(random_bytes(9));
 
         $accounts = [
-            ['name' => 'Tendai Moyo', 'email' => 'tendai.moyo@rida.gov.zw', 'role' => 'admin', 'department' => 'Administration'],
+            ['name' => 'Tendai Moyo', 'email' => 'tendai.moyo@rida.gov.zw', 'role' => 'supervisor', 'department' => 'Provincial Engineering'],
             ['name' => 'Farai Chikwanha', 'email' => 'farai.chikwanha@rida.gov.zw', 'role' => 'operator', 'department' => 'Field Operations'],
             ['name' => 'Rutendo Sibanda', 'email' => 'rutendo.sibanda@rida.gov.zw', 'role' => 'operator', 'department' => 'Drilling'],
             ['name' => 'Kudakwashe Ndlovu', 'email' => 'kudakwashe.ndlovu@rida.gov.zw', 'role' => 'operator', 'department' => 'Field Operations'],
             ['name' => 'Chiedza Mutasa', 'email' => 'chiedza.mutasa@rida.gov.zw', 'role' => 'viewer', 'department' => 'Monitoring & Evaluation'],
-            ['name' => 'Tapiwa Gumbo', 'email' => 'tapiwa.gumbo@rida.gov.zw', 'role' => 'viewer', 'department' => 'Finance'],
+            ['name' => 'Tapiwa Gumbo', 'email' => 'tapiwa.gumbo@rida.gov.zw', 'role' => 'finance', 'department' => 'Finance'],
+            ['name' => 'Rudo Dube', 'email' => 'rudo.dube@rida.gov.zw', 'role' => 'stores', 'department' => 'Stores'],
+            ['name' => 'Nyasha Banda', 'email' => 'nyasha.banda@rida.gov.zw', 'role' => 'supervisor', 'department' => 'Provincial Engineering'],
+            ['name' => 'Ruvimbo Makoni', 'email' => 'ruvimbo.makoni@rida.gov.zw', 'role' => 'finance', 'department' => 'Finance'],
         ];
 
         $lines = [
@@ -39,7 +42,7 @@ class DemoUserSeeder extends Seeder
         ];
 
         foreach ($accounts as $account) {
-            $user = User::updateOrCreate(
+            $user = User::firstOrCreate(
                 ['email' => $account['email']],
                 [
                     'name' => $account['name'],
@@ -54,11 +57,11 @@ class DemoUserSeeder extends Seeder
             $lines[] = 'NAME: ' . $user->name;
             $lines[] = 'EMAIL: ' . $user->email;
             $lines[] = 'ROLE: ' . ucfirst($user->role);
-            $lines[] = 'PASSWORD: ' . $password;
+            $lines[] = 'PASSWORD: ' . ($user->wasRecentlyCreated ? $password : '(unchanged; use existing password)');
             $lines[] = '';
         }
 
-        Storage::disk('local')->put('demo-user-credentials.txt', implode(PHP_EOL, $lines) . PHP_EOL);
-        $this->command?->info('Demo users seeded (6 records). Credentials: storage/app/private/demo-user-credentials.txt');
+        Storage::disk('local')->append('demo-user-credentials.txt', implode(PHP_EOL, $lines) . PHP_EOL);
+        $this->command?->info('Demo users prepared; existing passwords preserved. Credentials are in private storage.');
     }
 }

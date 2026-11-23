@@ -62,25 +62,19 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">Permission</th>
-                            <th class="text-center">Admin</th>
-                            <th class="text-center">Field Officer</th>
-                            <th class="text-center">Viewer</th>
+                            @foreach(\App\Models\User::ROLES as $label)<th class="text-center">{{ $label }}</th>@endforeach
                         </tr>
                     </thead>
                     <tbody>
                         @php
                         $permissions = [
-                            'Manage users'         => [true,  false, false],
-                            'Create boreholes'     => [true,  true,  false],
-                            'Edit boreholes'       => [true,  true,  false],
-                            'Delete boreholes'     => [true,  false, false],
-                            'Approve boreholes'    => [true,  false, false],
-                            'Create dams'          => [true,  true,  false],
-                            'Edit dams'            => [true,  true,  false],
-                            'Delete dams'          => [true,  false, false],
-                            'View reports'         => [true,  true,  true],
-                            'Export data'          => [true,  true,  true],
-                            'System settings'      => [true,  false, false],
+                            'Manage users'                    => [true, false, false, false, false, false],
+                            'Capture assets / edit own'       => [true, true,  true,  false, false, false],
+                            'Delete own assets (audited)'     => [true, false, true,  false, false, false],
+                            'Approve records created by others' => [true, true, false, false, false, false],
+                            'Manage clients and invoices'     => [true, false, false, true,  false, false],
+                            'Manage inventory and issue stock' => [true, false, false, false, true, false],
+                            'View reports / export permitted data' => [true, true, true, true, true, true],
                         ];
                         @endphp
                         @foreach($permissions as $perm => $access)

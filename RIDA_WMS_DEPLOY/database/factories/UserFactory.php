@@ -17,15 +17,15 @@ class UserFactory extends Factory
 
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'email' => fake()->unique()->userName() . '@rida.gov.zw',
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => fake()->randomElement($roles),
             'phone' => fake()->phoneNumber(),
             'department' => fake()->randomElement($departments),
-            'is_active' => fake()->boolean(90), // 90% chance of being active
-            'last_login_at' => fake()->optional(0.7)->dateTimeBetween('-30 days', 'now'),
+            'is_active' => true,
+            'last_login_at' => null,
         ];
     }
 

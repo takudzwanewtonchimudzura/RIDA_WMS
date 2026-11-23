@@ -41,7 +41,7 @@ class InvoiceController extends Controller
                 }
             })
             ->latest('issue_date')
-            ->paginate(20)
+            ->paginate(config('rwims.default_page_size'))
             ->withQueryString();
 
         return view('invoices.index', compact('invoices', 'filters'));
@@ -63,13 +63,13 @@ class InvoiceController extends Controller
             'issue_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:issue_date',
             'currency' => ['required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
-            'tax_amount' => 'nullable|numeric|min:0|max:999999999999',
+            'tax_amount' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'status' => 'required|in:draft,issued',
             'notes' => 'nullable|string|max:4000',
             'items' => 'required|array|min:1|max:50',
             'items.*.description' => 'required|string|max:255',
             'items.*.quantity' => 'required|numeric|gt:0|max:999999',
-            'items.*.unit_price' => 'required|numeric|min:0|max:999999999999',
+            'items.*.unit_price' => 'required|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
         ]);
 
         if (!Client::whereKey($data['client_id'])->where('is_active', true)->exists()) {
@@ -172,6 +172,6 @@ class InvoiceController extends Controller
 
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageFinance(), 403);
     }
 }

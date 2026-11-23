@@ -11,12 +11,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PipedWaterScheme extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = [
         'name',
         'village',
         'ward',
+        'province',
+        'district',
         'water_source',
         'water_source_other',
         'year_established',

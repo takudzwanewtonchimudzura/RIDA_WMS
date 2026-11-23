@@ -35,7 +35,7 @@ class SchemeWorkflowsTest extends TestCase
         $payload = [
             'name_of_scheme' => 'North Fields',
             'village' => 'Chigo A',
-            'ward' => '4',
+            ...$this->location(),
             'irrigation_type' => 'Drip',
             'type_of_water_source' => 'Borehole',
             'year_established' => 2019,
@@ -90,7 +90,7 @@ class SchemeWorkflowsTest extends TestCase
         $payload = [
             'name' => 'Chigo Water Scheme',
             'village' => 'Chigo A',
-            'ward' => '4',
+            ...$this->location(),
             'water_source' => 'borehole',
             'year_established' => 2018,
             'established_by' => 'District Council',
@@ -150,9 +150,7 @@ class SchemeWorkflowsTest extends TestCase
         $payload = [
             'name' => 'North Dam',
             'village' => 'Chigo A',
-            'ward' => '4',
-            'district' => 'North District',
-            'province' => 'Harare Province',
+            ...$this->location(),
             'wall_condition' => 'good',
             'spillway_condition' => 'good',
             'capacity' => 500,

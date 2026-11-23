@@ -26,25 +26,13 @@
                         <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email) }}" required>
                         @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div class="col-12">
-                        <div class="alert alert-info py-2 mb-0 small"><i class="fas fa-info-circle me-1"></i> Leave password fields blank to keep the current password.</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">New Password</label>
-                        <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Leave blank to keep current">
-                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Confirm New Password</label>
-                        <input type="password" name="password_confirmation" class="form-control" placeholder="Repeat new password">
-                    </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
                         <select name="role" class="form-select @error('role') is-invalid @enderror" required>
                             <option value="">-- Select Role --</option>
-                            <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Administrator</option>
-                            <option value="operator" {{ old('role', $user->role) == 'operator' ? 'selected' : '' }}>Field Operator</option>
-                            <option value="viewer" {{ old('role', $user->role) == 'viewer' ? 'selected' : '' }}>Viewer</option>
+                            @foreach(\App\Models\User::ROLES as $role => $label)
+                            <option value="{{ $role }}" @selected(old('role', $user->role) === $role)>{{ $label }}</option>
+                            @endforeach
                         </select>
                         @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -58,7 +46,8 @@
                     </div>
                     <div class="col-md-6 d-flex align-items-end pb-1">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {{ old('is_active', $user->is_active) ? 'checked' : '' }}>
+                            <input type="hidden" name="is_active" value="0">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $user->is_active) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold" for="is_active">Active Account</label>
                         </div>
                     </div>
@@ -71,6 +60,20 @@
             </form>
         </div>
     </div>
+    @if($user->id === auth()->id())
+        <a href="{{ route('account.password.edit') }}" class="btn btn-outline-primary mt-3">Change my password</a>
+    @elseif($user->is_active)
+    <div class="card card-body mt-4">
+        <h3 class="h5">Account recovery</h3>
+        <p>Verify this user's identity first. A temporary password expires in 24 hours and must be changed at the next sign-in. Issuance revokes existing sessions/reset links and is audited.</p>
+        <form method="POST" action="{{ route('users.temporary-password', $user) }}" data-confirm="Issue a temporary password and sign this user out everywhere?">
+            @csrf
+            <label for="recovery_current_password" class="form-label">Your administrator password</label>
+            <input id="recovery_current_password" type="password" name="current_password" required autocomplete="current-password" class="form-control mb-3">
+            <button type="submit" class="btn btn-outline-warning">Issue temporary password</button>
+        </form>
+    </div>
+    @endif
     @if($user->id !== auth()->id())
     <div class="card border-danger border-opacity-25 shadow-sm mt-4">
         <div class="card-header bg-danger bg-opacity-10 py-3">
@@ -79,9 +82,9 @@
         <div class="card-body d-flex justify-content-between align-items-center">
             <div>
                 <div class="fw-semibold">Delete this user</div>
-                <div class="text-muted small">This action cannot be undone.</div>
+                <div class="text-muted small">The account will be archived; record ownership and audit history are preserved.</div>
             </div>
-            <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Permanently delete this user?')">
+            <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Archive this user account?')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-outline-danger btn-sm px-3"><i class="fas fa-trash me-1"></i>Delete User</button>

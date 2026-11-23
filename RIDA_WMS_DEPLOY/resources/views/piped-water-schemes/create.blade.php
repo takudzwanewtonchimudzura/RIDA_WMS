@@ -62,6 +62,7 @@
                     <!-- Form Sections -->
                     <form method="POST" action="{{ isset($pipedWaterScheme) ? route('piped-water-schemes.update', $pipedWaterScheme) : route('piped-water-schemes.store') }}" id="schemeForm">
                         @csrf
+                        @include('partials.province-district', ['locationRecord' => $pipedWaterScheme ?? null])
                         @if(isset($pipedWaterScheme))
                             @method('PUT')
                         @endif
@@ -228,9 +229,9 @@
                                     <label for="functionality" class="form-label required">Functionality</label>
                                     <select class="form-control" id="functionality" name="functionality" required>
                                         <option value="">Select Status</option>
-                                        <option value="Functional" {{ old('functionality', $pipedWaterScheme->functionality ?? '') == 'Functional' ? 'selected' : '' }}>Functional</option>
-                                        <option value="Partially Functional" {{ old('functionality', $pipedWaterScheme->functionality ?? '') == 'Partially Functional' ? 'selected' : '' }}>Partially Functional</option>
-                                        <option value="Non functional" {{ old('functionality', $pipedWaterScheme->functionality ?? '') == 'Non functional' ? 'selected' : '' }}>Non functional</option>
+                                        @foreach(\App\Models\InfrastructureStatus::VALUES as $status)
+                                            <option value="{{ $status }}" @selected(old('functionality', $pipedWaterScheme->functionality ?? '') === $status)>{{ $status }}</option>
+                                        @endforeach
                                     </select>
                                     @error('functionality')
                                         <div class="text-danger small mt-1">{{ $message }}</div>

@@ -16,7 +16,7 @@
                     @if(auth()->user()->isAdmin() || (auth()->user()->isOperator() && (int) $dam->created_by === (int) auth()->id()))
                         <a href="{{ route('dams.edit', $dam->id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit me-1"></i>Edit</a>
                     @endif
-                    @if(auth()->user()->isAdmin())
+                    @if(auth()->user()->canApprove() && (int) $dam->created_by !== (int) auth()->id())
                         <form method="POST" action="{{ route($dam->approved_at ? 'dams.unapprove' : 'dams.approve', $dam) }}">@csrf @method('PATCH')<button class="btn btn-{{ $dam->approved_at ? 'outline-light' : 'success' }} btn-sm" type="submit">{{ $dam->approved_at ? 'Remove approval' : 'Approve' }}</button></form>
                     @endif
                     <a href="{{ route('dams.index') }}" class="btn btn-secondary btn-sm">

@@ -11,7 +11,7 @@ trait AuthorizesRecords
     {
         $user = $request->user();
         abort_unless(
-            $user->isAdmin() || ($user->isOperator() && (int) $record->created_by === (int) $user->id),
+            $user->isAdmin() || ($user->canCapture() && (int) $record->created_by === (int) $user->id),
             403
         );
     }
@@ -20,7 +20,7 @@ trait AuthorizesRecords
     {
         $user = $request->user();
         abort_unless(
-            $user->isAdmin() || $user->isViewer() || ($user->isOperator() && (int) $record->created_by === (int) $user->id),
+            !$user->isOperator() || (int) $record->created_by === (int) $user->id,
             403
         );
     }
@@ -37,6 +37,12 @@ trait AuthorizesRecords
     protected function authorizeAdministrator(Request $request): void
     {
         abort_unless($request->user()->isAdmin(), 403);
+    }
+
+    protected function authorizeApproval(Request $request, Model $record): void
+    {
+        abort_unless($request->user()->canApprove(), 403);
+        abort_if((int) $record->created_by === (int) $request->user()->id, 403, 'A different supervisor must approve this record.');
     }
 
     protected function scopeRecordsToOwner(Request $request, $query)

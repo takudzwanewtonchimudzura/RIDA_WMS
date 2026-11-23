@@ -49,8 +49,8 @@
                                 <span class="badge bg-success">Functional</span>
                             @elseif($status == 'Partially Functional')
                                 <span class="badge bg-warning">Partially Functional</span>
-                            @elseif($status == 'Nonfunctional')
-                                <span class="badge bg-danger">Nonfunctional</span>
+                            @elseif($status == 'Non Functional')
+                                <span class="badge bg-danger">Non Functional</span>
                             @else
                                 <span class="badge bg-secondary">Unknown</span>
                             @endif

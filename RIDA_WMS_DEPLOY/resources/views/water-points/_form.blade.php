@@ -1,6 +1,18 @@
 @php
     $wp = $waterPoint ?? null;
 @endphp
+@include('partials.province-district', ['locationRecord' => $wp])
+<div class="mb-3">
+    <label for="borehole_id" class="form-label">Linked borehole (required for Borehole sources)</label>
+    <select id="borehole_id" name="borehole_id" class="form-select">
+        <option value="">Select an existing borehole</option>
+        @foreach(\App\Models\Borehole::query()->when(auth()->user()->isOperator(), fn ($q) => $q->where('created_by', auth()->id()))->orderBy('borehole_serial_no')->get() as $borehole)
+            <option value="{{ $borehole->id }}" data-province="{{ $borehole->province }}" data-district="{{ $borehole->admin_district }}" data-ward="{{ $borehole->ward }}" data-latitude="{{ $borehole->latitude }}" data-longitude="{{ $borehole->longitude }}" @selected((string) old('borehole_id', $wp?->borehole_id) === (string) $borehole->id)>{{ $borehole->borehole_serial_no }} — {{ $borehole->province }}, {{ $borehole->admin_district }}, {{ $borehole->ward }} ({{ $borehole->latitude }}, {{ $borehole->longitude }})</option>
+        @endforeach
+    </select>
+    <small class="text-muted">Use the same location and GPS as the linked borehole. This is a service record for that asset, not another borehole.</small>
+    @error('borehole_id')<div class="text-danger small">{{ $message }}</div>@enderror
+</div>
 
 <div class="row mb-4">
     <div class="col-md-12">
@@ -31,14 +43,14 @@
 
     <div class="col-md-3 mb-3">
         <label for="latitude" class="form-label">Latitude</label>
-        <input type="number" step="0.000001" class="form-control @error('latitude') is-invalid @enderror"
+        <input type="number" step="any" class="form-control @error('latitude') is-invalid @enderror"
                id="latitude" name="latitude" value="{{ old('latitude', $wp->latitude ?? '') }}">
         @error('latitude')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 
     <div class="col-md-3 mb-3">
         <label for="longitude" class="form-label">Longitude</label>
-        <input type="number" step="0.000001" class="form-control @error('longitude') is-invalid @enderror"
+        <input type="number" step="any" class="form-control @error('longitude') is-invalid @enderror"
                id="longitude" name="longitude" value="{{ old('longitude', $wp->longitude ?? '') }}">
         @error('longitude')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
@@ -67,7 +79,7 @@
         <label for="functionality" class="form-label">Functionality Status *</label>
         <select class="form-select @error('functionality') is-invalid @enderror" id="functionality" name="functionality" required>
             <option value="">Select Status</option>
-            @foreach(['Functional', 'Partially Functional', 'Nonfunctional'] as $option)
+            @foreach(\App\Models\InfrastructureStatus::VALUES as $option)
                 <option value="{{ $option }}" {{ $functionalityOld == $option ? 'selected' : '' }}>{{ $option }}</option>
             @endforeach
         </select>
@@ -234,3 +246,28 @@
         @error('last_repair_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const link = document.getElementById('borehole_id');
+    const source = document.getElementById('type_of_water_source');
+    link.required = source.value === 'Borehole';
+    source.addEventListener('change', () => {
+        link.required = source.value === 'Borehole';
+        if (!link.required) link.value = '';
+    });
+    link.addEventListener('change', () => {
+        if (!link.value) return;
+        const location = link.selectedOptions[0].dataset;
+        source.value = 'Borehole';
+        link.required = true;
+        for (const field of ['province', 'district', 'ward', 'latitude', 'longitude']) {
+            const input = document.getElementById(field);
+            input.value = location[field];
+            input.dispatchEvent(new Event('change', {bubbles: true}));
+        }
+    });
+});
+</script>
+@endpush

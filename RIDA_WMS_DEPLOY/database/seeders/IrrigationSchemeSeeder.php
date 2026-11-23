@@ -16,21 +16,25 @@ class IrrigationSchemeSeeder extends Seeder
             return;
         }
 
-        $users = User::all();
+        $users = User::where('role', 'operator')->get();
         $userIds = $users->pluck('id')->toArray();
+        $approver = User::where('role', 'supervisor')->firstOrFail();
 
         $schemes = [];
 
         // Create 10 irrigation schemes
         for ($i = 1; $i <= 10; $i++) {
+            $location = app(\App\Services\ZimbabweLocations::class)->sample($i);
             $hasCommittee = rand(0, 1);
             $hasFund = rand(0, 1);
-            $functionality = ['Functional', 'Partially Functional', 'Nonfunctional'][rand(0, 2)];
+            $functionality = \App\Models\InfrastructureStatus::VALUES[rand(0, 2)];
 
             $schemes[] = [
                 'name' => 'Irrigation Scheme ' . str_pad($i, 2, '0', STR_PAD_LEFT),
                 'village' => 'Village ' . chr(65 + $i),
-                'ward' => 'Ward ' . rand(1, 10),
+                'ward' => $location['ward'],
+                'province' => $location['province'],
+                'district' => $location['district'],
                 
                 // Irrigation Details
                 'irrigation_type' => ['Sprinkler', 'Drip', 'Canal', 'Flood'][rand(0, 3)],
@@ -56,14 +60,14 @@ class IrrigationSchemeSeeder extends Seeder
                 'committee_trained' => $hasCommittee ? rand(0, 1) : 0,
                 'committee_functional' => $hasCommittee ? rand(0, 1) : 0,
                 'has_revolving_fund' => $hasFund,
-                'fund_amount_available' => $hasFund ? rand(1000000, 10000000) : null,
+                'fund_amount_available' => $hasFund ? rand(200, 5000) : null,
                 'committee_total_members' => $hasCommittee ? rand(5, 12) : null,
                 'committee_women' => $hasCommittee ? rand(2, 6) : null,
                 'committee_men' => $hasCommittee ? rand(3, 8) : null,
                 
                 // System Fields
                 'created_by' => $userIds[array_rand($userIds)],
-                'approved_by' => $userIds[array_rand($userIds)],
+                'approved_by' => $approver->id,
                 'approved_at' => Carbon::now()->subDays(rand(1, 30)),
                 'remarks' => 'Irrigation scheme for smallholder farmers',
                 'created_at' => Carbon::now()->subDays(rand(1, 365)),

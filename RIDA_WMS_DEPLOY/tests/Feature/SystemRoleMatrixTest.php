@@ -158,9 +158,7 @@ class SystemRoleMatrixTest extends TestCase
                     $this->post(route('prospecting.store'), [
                         'project_name' => "Matrix project U{$userIndex} R{$recordIndex}",
                         'village' => "Village U{$userIndex}",
-                        'ward' => (string) $recordIndex,
-                        'district' => 'North District',
-                        'province' => 'Midlands Province',
+                        ...$this->location(),
                         'survey_date' => '2026-09-20',
                         'siting_agency' => 'Government',
                         'prospector_name' => $user->name,
@@ -283,23 +281,17 @@ class SystemRoleMatrixTest extends TestCase
             $suffix = sprintf('U%02d-F%02d', $userIndex + 1, $recordIndex);
             $this->postJson(route('boreholes.store'), [
                 'borehole_serial_no' => "FORM-BH-{$suffix}",
-                'province' => 'Midlands Province',
-                'admin_district' => 'North District',
+                ...$this->location(true),
                 'locality' => "Form Village {$suffix}",
                 'village' => "Form Village {$suffix}",
-                'ward' => (string) $recordIndex,
                 'date' => '2026-09-20',
-                'latitude' => -19.2,
-                'longitude' => 29.8,
                 'blowing_yield' => 2.5,
             ])->assertCreated();
 
             $this->post(route('dams.store'), [
                 'name' => "Form Dam {$suffix}",
                 'village' => "Form Village {$suffix}",
-                'ward' => (string) $recordIndex,
-                'district' => 'North District',
-                'province' => 'Midlands Province',
+                ...$this->location(),
                 'wall_condition' => 'good',
                 'spillway_condition' => 'good',
                 'capacity' => 100,
@@ -316,7 +308,7 @@ class SystemRoleMatrixTest extends TestCase
             $this->post(route('piped-water-schemes.store'), [
                 'name' => "Form Piped {$suffix}",
                 'village' => "Form Village {$suffix}",
-                'ward' => (string) $recordIndex,
+                ...$this->location(),
                 'water_source' => 'borehole',
                 'year_established' => 2020,
                 'established_by' => 'District Council',
@@ -336,7 +328,7 @@ class SystemRoleMatrixTest extends TestCase
             $this->post(route('irrigation-schemes.store'), [
                 'name' => "Form Irrigation {$suffix}",
                 'village' => "Form Village {$suffix}",
-                'ward' => (string) $recordIndex,
+                ...$this->location(),
                 'irrigation_type' => 'Drip',
                 'water_source_type' => 'Borehole',
                 'functionality' => 'Functional',
@@ -353,8 +345,9 @@ class SystemRoleMatrixTest extends TestCase
             $this->post(route('water-points.store'), [
                 'name' => "Form Water Point {$suffix}",
                 'village_name' => "Form Village {$suffix}",
-                'ward' => (string) $recordIndex,
+                ...$this->location(),
                 'type_of_water_source' => 'Borehole',
+                'borehole_id' => Borehole::where('borehole_serial_no', "FORM-BH-{$suffix}")->value('id'),
                 'functionality' => 'Functional',
             ])->assertRedirect(route('water-points.index'));
         }

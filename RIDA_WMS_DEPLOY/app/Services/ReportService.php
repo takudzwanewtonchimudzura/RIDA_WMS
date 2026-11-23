@@ -6,12 +6,12 @@ use App\Models\Borehole;
 use App\Models\GeologyLayer;
 use App\Models\CasingDetail;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
+use App\Services\ReportCache as Cache;
 use Carbon\Carbon;
 
 class ReportService
 {
-    private const YIELD_EXPRESSION = 'COALESCE(NULLIF(blowing_yield, 0), yield_lps)';
+    private const YIELD_EXPRESSION = Borehole::YIELD_EXPRESSION;
 
     protected $cacheDuration;
 
@@ -58,7 +58,7 @@ class ReportService
         
         return Cache::remember($cacheKey, $this->cacheDuration, function() use ($filters) {
             return $this->applyFilters(Borehole::query(), $filters)
-                ->sum('total_cost') ?? 0;
+                ->where('cost_currency', 'USD')->sum('total_cost') ?? 0;
         });
     }
 
@@ -125,9 +125,10 @@ class ReportService
                 'boreholes_completed' => $total,
                 'success_rate' => $total > 0 ? 
                     round(((clone $query)->whereRaw(self::YIELD_EXPRESSION . ' > 0')->count() / $total) * 100, 1) : 0,
-                'water_quality' => $total > 0 ? 
-                    round(($query->whereBetween('ph', [6.5, 8.5])->count() / $total) * 100, 1) : 0,
-                'cost_savings' => $this->calculateCostSavings($filters),
+                'water_quality' => $total > 0 ?
+                    round((WaterQuality::compliant(clone $query)->count() / $total) * 100, 1) : 0,
+                'quality_tested' => (clone $query)->whereNotNull('ph')->whereNotNull('tds_mg_l')->whereNotNull('turbidity_ntu')->count(),
+                'cost_savings' => null,
                 'average_completion_time' => $this->getAverageCompletionTime($filters)
             ];
         });
@@ -135,30 +136,7 @@ class ReportService
 
     public function getRecommendations(array $filters = [])
     {
-        $cacheKey = 'recommendations_' . md5(serialize($filters));
-        
-        return Cache::remember($cacheKey, $this->cacheDuration, function() use ($filters) {
-            $lowYieldProvinces = $this->applyFilters(Borehole::query(), $filters)
-                ->select('province', DB::raw('AVG(' . self::YIELD_EXPRESSION . ') as avg_yield'))
-                ->groupBy('province')
-                ->orderBy('avg_yield')
-                ->first();
-
-            $highCostRegions = $this->applyFilters(Borehole::query(), $filters)
-                ->select('province', DB::raw('AVG(total_cost / NULLIF(final_borehole_depth, 0)) as cost_per_meter'))
-                ->groupBy('province')
-                ->orderBy('cost_per_meter', 'desc')
-                ->first();
-
-            return [
-                'focus_province' => $lowYieldProvinces->province ?? 'all regions',
-                'low_yield_region' => $lowYieldProvinces->province ?? 'specific areas',
-                'high_cost_region' => $highCostRegions->province ?? 'certain areas',
-                'technology' => 'advanced geological surveying and real-time monitoring',
-                'additional_funding' => 75000,
-                'maintenance_priority' => $this->getMaintenancePriorityAreas($filters)
-            ];
-        });
+        return [];
     }
 
     // ==================== OPERATIONAL PERFORMANCE METHODS ====================
@@ -309,33 +287,33 @@ class ReportService
             $query = $this->applyFilters(Borehole::query(), $filters);
             $total = $query->count();
             
-            $phOptimal = $query->whereBetween('ph', [6.5, 8.5])->count();
-            $tdsOptimal = $query->where('tds_mg_l', '<', 600)->count();
-            $ecOptimal = $query->where('electrical_conductivity', '<', 1000)->orWhereNull('electrical_conductivity')->count();
+            $limits = WaterQuality::limits();
+            $phRange = [$limits['ph_min'], $limits['ph_max']];
+            $phOptimal = (clone $query)->whereBetween('ph', $phRange)->count();
+            $tdsOptimal = (clone $query)->whereBetween('tds_mg_l', [0, $limits['tds_max']])->count();
+            $ecOptimal = (clone $query)->whereBetween('electrical_conductivity', [0, 1000])->count();
+            $compliant = WaterQuality::compliant(clone $query)->count();
 
             return [
-                'compliance_rate' => $total > 0 ? round(($phOptimal / $total) * 100, 1) : 0,
+                'compliance_rate' => $total > 0 ? round(($compliant / $total) * 100, 1) : 0,
                 'ph_distribution' => [
-                    'excellent' => $query->whereBetween('ph', [6.5, 8.5])->count(),
-                    'good' => $query->whereBetween('ph', [6.0, 9.0])->whereNotBetween('ph', [6.5, 8.5])->count(),
-                    'fair' => $query->where('ph', '<', 6.0)->orWhere('ph', '>', 9.0)->count(),
-                    'poor' => $query->whereNull('ph')->count()
+                    'excellent' => (clone $query)->whereBetween('ph', $phRange)->count(),
+                    'good' => (clone $query)->whereBetween('ph', [6.0, 9.0])->whereNotBetween('ph', $phRange)->count(),
+                    'fair' => (clone $query)->where(fn ($q) => $q->where('ph', '<', 6.0)->orWhere('ph', '>', 9.0))->count(),
+                    'poor' => (clone $query)->whereNull('ph')->count()
                 ],
                 'tds_analysis' => [
-                    'excellent' => $query->where('tds_mg_l', '<', 300)->count(),
-                    'good' => $query->whereBetween('tds_mg_l', [300, 600])->count(),
-                    'fair' => $query->whereBetween('tds_mg_l', [600, 900])->count(),
-                    'poor' => $query->where('tds_mg_l', '>', 900)->orWhereNull('tds_mg_l')->count()
+                    'excellent' => (clone $query)->whereBetween('tds_mg_l', [0, min(299, $limits['tds_max'])])->count(),
+                    'good' => (clone $query)->whereBetween('tds_mg_l', [300, $limits['tds_max']])->count(),
+                    'fair' => (clone $query)->where('tds_mg_l', '>', $limits['tds_max'])->where('tds_mg_l', '<=', 900)->count(),
+                    'poor' => (clone $query)->where(fn ($q) => $q->where('tds_mg_l', '>', 900)->orWhereNull('tds_mg_l'))->count()
                 ],
                 'electrical_conductivity' => [
-                    'low' => $query->where('electrical_conductivity', '<', 500)->count(),
-                    'medium' => $query->whereBetween('electrical_conductivity', [500, 1500])->count(),
-                    'high' => $query->where('electrical_conductivity', '>', 1500)->orWhereNull('electrical_conductivity')->count()
+                    'low' => (clone $query)->whereBetween('electrical_conductivity', [0, 499.999])->count(),
+                    'medium' => (clone $query)->whereBetween('electrical_conductivity', [500, 1500])->count(),
+                    'high' => (clone $query)->where(fn ($q) => $q->where('electrical_conductivity', '>', 1500)->orWhereNull('electrical_conductivity'))->count()
                 ],
-                'good_quality' => $total > 0 ? 
-                    round(($query->whereBetween('ph', [6.5, 8.5])
-                        ->where('tds_mg_l', '<', 600)
-                        ->count() / $total) * 100, 1) : 0,
+                'good_quality' => $total > 0 ? round(($compliant / $total) * 100, 1) : 0,
                 'optimal_ph' => $total > 0 ? round(($phOptimal / $total) * 100, 1) : 0,
                 'tds_compliance' => $total > 0 ? round(($tdsOptimal / $total) * 100, 1) : 0,
                 'ec_compliance' => $total > 0 ? round(($ecOptimal / $total) * 100, 1) : 0
@@ -430,19 +408,18 @@ class ReportService
         $cacheKey = 'regional_analysis_' . md5(serialize($filters));
         
         return Cache::remember($cacheKey, $this->cacheDuration, function() use ($filters) {
+            $limits = WaterQuality::limits();
             return $this->applyFilters(Borehole::query(), $filters)
                 ->select('province as name',
                     DB::raw('COUNT(*) as total_boreholes'),
                     DB::raw('AVG(' . self::YIELD_EXPRESSION . ') as avg_yield'),
                     DB::raw('(SUM(CASE WHEN ' . self::YIELD_EXPRESSION . ' > 0 THEN 1 ELSE 0 END) / COUNT(*)) * 100 as success_rate'),
                     DB::raw('AVG(COALESCE(NULLIF(final_borehole_depth_m, 0), final_borehole_depth)) as avg_depth'),
-                    DB::raw('AVG(CASE WHEN ph BETWEEN 6.5 AND 8.5 THEN 10 
-                                 WHEN ph BETWEEN 6.0 AND 9.0 THEN 7 
-                                 ELSE 3 END) as quality_score'),
                     DB::raw('SUM(total_cost) as investment'),
                     DB::raw('AVG(total_cost / NULLIF(final_borehole_depth, 0)) as cost_per_meter'),
                     DB::raw('SUM(number_of_beneficiaries) as total_beneficiaries')
                 )
+                ->selectRaw('AVG(CASE WHEN ph BETWEEN ? AND ? THEN 10 WHEN ph BETWEEN 6.0 AND 9.0 THEN 7 ELSE 3 END) as quality_score', [$limits['ph_min'], $limits['ph_max']])
                 ->whereNotNull('province')
                 ->groupBy('province')
                 ->orderBy('total_boreholes', 'desc')
@@ -766,11 +743,12 @@ public function getInvestmentDistribution(array $filters = [])
 // Private helper methods for the new functions
 private function calculateWaterQualityScore($borehole)
 {
+    $limits = WaterQuality::limits();
     $score = 0;
     $factors = 0;
 
     if ($borehole->ph) {
-        if ($borehole->ph >= 6.5 && $borehole->ph <= 8.5) {
+        if ($borehole->ph >= $limits['ph_min'] && $borehole->ph <= $limits['ph_max']) {
             $score += 10;
         } elseif ($borehole->ph >= 6.0 && $borehole->ph <= 9.0) {
             $score += 7;
@@ -781,9 +759,9 @@ private function calculateWaterQualityScore($borehole)
     }
 
     if ($borehole->tds_mg_l) {
-        if ($borehole->tds_mg_l < 300) {
+        if ($borehole->tds_mg_l <= min(299, $limits['tds_max'])) {
             $score += 10;
-        } elseif ($borehole->tds_mg_l < 600) {
+        } elseif ($borehole->tds_mg_l <= $limits['tds_max']) {
             $score += 8;
         } elseif ($borehole->tds_mg_l < 900) {
             $score += 5;

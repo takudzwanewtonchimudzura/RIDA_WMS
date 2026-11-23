@@ -25,7 +25,7 @@
                         <td>{{ $test->ecoli_cfu_100ml ?? 'N/A' }}</td>
                         <td>{{ $test->tds_mg_l !== null ? $test->tds_mg_l . ' mg/L' : 'N/A' }}</td>
                         <td>{{ $test->electrical_conductivity ?? 'N/A' }}</td>
-                        <td><span class="badge bg-{{ $test->overall_quality === 'Meets Standards' ? 'success' : 'warning' }}">{{ $test->overall_quality }}</span></td>
+                        <td><span class="badge bg-{{ $test->overall_quality === 'Meets Recorded Limits' ? 'success' : 'warning' }}">{{ $test->overall_quality }}</span></td>
                         <td>{{ $test->tester->name ?? 'N/A' }}</td>
                         <td>{{ $test->notes ?: 'N/A' }}</td>
                     </tr>

@@ -15,6 +15,7 @@
             </div>
             <div class="card-body">
                 <form action="{{ route('irrigation-schemes.store') }}" method="POST">
+                    @include('partials.province-district', ['locationRecord' => null])
                     @csrf
                     
                     <div class="row mb-4">
@@ -204,9 +205,9 @@
                             <select class="form-select @error('functionality_of_the_scheme') is-invalid @enderror" 
                                     id="functionality_of_the_scheme" name="functionality_of_the_scheme" required>
                                 <option value="">Select Status</option>
-                                <option value="Functional" {{ old('functionality_of_the_scheme') == 'Functional' ? 'selected' : '' }}>Functional</option>
-                                <option value="Partially Functional" {{ old('functionality_of_the_scheme') == 'Partially Functional' ? 'selected' : '' }}>Partially Functional</option>
-                                <option value="Nonfunctional" {{ old('functionality_of_the_scheme') == 'Nonfunctional' ? 'selected' : '' }}>Nonfunctional</option>
+                                @foreach(\App\Models\InfrastructureStatus::VALUES as $status)
+                                    <option value="{{ $status }}" @selected(old('functionality_of_the_scheme') === $status)>{{ $status }}</option>
+                                @endforeach
                             </select>
                             @error('functionality_of_the_scheme')
                                 <div class="invalid-feedback">{{ $message }}</div>

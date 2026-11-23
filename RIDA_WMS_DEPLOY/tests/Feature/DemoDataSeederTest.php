@@ -21,6 +21,12 @@ class DemoDataSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\Storage::fake('local');
+    }
+
     public function test_demo_seeders_populate_at_least_five_records_per_asset_type(): void
     {
         $this->seed(DemoUserSeeder::class);

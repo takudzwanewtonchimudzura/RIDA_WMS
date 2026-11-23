@@ -135,6 +135,23 @@ class ConsumablesWorkflowTest extends TestCase
         ])->assertRedirect(route('consumables.stock-requests.show', $stockRequest));
         $this->assertSame(23, (int) $firstItem->fresh()->current_stock);
 
+        $pending = StockRequest::where('status', 'pending')->firstOrFail();
+        $approval = ['items' => [$pending->items()->first()->id => ['approved_quantity' => 1]]];
+        $pending->update(['user_id' => $admin->id]);
+        $this->get(route('consumables.stock-requests.show', $pending))->assertDontSee('Approve quantities');
+        $this->post(route('consumables.stock-requests.approve', $pending), $approval)->assertForbidden();
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        $this->actingAs($supervisor)->get(route('consumables.stock-requests.show', $pending))->assertSee('Approve quantities');
+        $this->post(route('consumables.stock-requests.approve', $pending), $approval)->assertRedirect();
+        $this->assertSame($supervisor->id, $pending->fresh()->approved_by);
+        $issue = ['items' => [$pending->items()->first()->id => ['issued_quantity' => 1]]];
+        $this->post(route('consumables.stock-requests.issue', $pending), $issue)->assertForbidden();
+        $stores = User::factory()->create(['role' => 'stores']);
+        $this->actingAs($stores)->get(route('consumables.stock-requests.show', $pending))->assertSee('Issue approved stock');
+        $this->post(route('consumables.stock-requests.approve', $pending), $approval)->assertForbidden();
+        $this->post(route('consumables.stock-requests.issue', $pending), $issue)->assertRedirect();
+        $this->assertSame(22, (int) $firstItem->fresh()->current_stock);
+
         $this->actingAs($operator);
         foreach (range(1, 5) as $index) {
             $this->post(route('consumables.usage-reports.store'), [
@@ -153,9 +170,9 @@ class ConsumablesWorkflowTest extends TestCase
 
         $this->assertDatabaseCount('usage_reports', 5);
         $this->assertDatabaseCount('usage_report_items', 5);
-        $this->assertSame(18, (int) $firstItem->fresh()->current_stock);
-        $this->assertDatabaseCount('inventory_movements', 12);
-        $this->assertSame(18, (int) $firstItem->inventory->movements()->sum('quantity_delta'));
+        $this->assertSame(17, (int) $firstItem->fresh()->current_stock);
+        $this->assertDatabaseCount('inventory_movements', 13);
+        $this->assertSame(17, (int) $firstItem->inventory->movements()->sum('quantity_delta'));
         $this->get(route('consumables.usage-reports.index'))->assertOk();
         $this->get(route('consumables.usage-reports.create'))->assertOk();
         $report = UsageReport::firstOrFail();

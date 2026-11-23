@@ -1,8 +1,8 @@
 # RIDA RWIMS User Manual
 
 **System:** RIDA RWIMS (Rural Water and Infrastructure Management System)  
-**Audience:** RIDA administrators, operators, viewers, and deployment staff  
-**Last updated:** 28 September 2026
+**Audience:** RIDA administrators, supervisors, field officers, finance/stores staff, viewers, and deployment staff  
+**Last updated:** 20 October 2026
 
 ## 1. What the system does
 
@@ -20,9 +20,20 @@ The application brings operational records and reporting together. It does not r
 
 If you cannot sign in, a page is forbidden, or an action is unavailable, contact the system administrator. Do not share passwords or use another person's account.
 
+### Password recovery and changes
+
+- Select **Forgot password?** on the sign-in page to request an email reset link. Links expire after 60 minutes and can be used only once. Requests are rate-limited.
+- Email must be configured by the server administrator. If the page says delivery is not configured or failed, contact an administrator rather than waiting for an email that was not sent.
+- An administrator can verify your identity and issue a temporary password. It expires in 24 hours and must be changed at your next sign-in before other modules can be opened. Keep it private.
+- When signed in, open the top-right account menu and choose **Change password**. Enter your current password, then a new password and its confirmation. Use at least 12 characters including uppercase/lowercase letters and a number.
+- Password changes revoke other sessions, remember-me access and outstanding reset links. Your current session remains available after a signed-in password change.
+
 ### Roles and access
 
-- **Administrator:** manages users and has system-wide access, including approvals, inventory decisions, client accounts, and invoices. Some actions, such as voiding an invoice, remain subject to workflow rules.
+- **Administrator:** manages users/settings and has system-wide access, including approvals, inventory decisions, client accounts, and invoices. Cannot approve their own records or stock requests. Some actions, such as voiding an invoice, remain subject to workflow rules.
+- **Supervisor / Provincial Engineer:** independently reviews infrastructure, prospecting and stock requests and captures operational records. This role is currently system-wide, not limited to a province.
+- **Finance:** manages clients, invoices and payments, not infrastructure capture/approval or stores.
+- **Stores:** manages inventory, suppliers/categories and issues approved stock; cannot approve stock requests or access client/invoice management.
 - **Operator:** enters operational records and can work with records they created where the module applies creator-based ownership. Operators may not perform administrator-only approvals or financial/user-management actions. Deletion is restricted to an operator's own records or an administrator.
 - **Viewer:** reads permitted shared/published asset information, inventory, and reports. A viewer cannot create, edit, delete, approve, request or issue stock, submit usage, or use supplier, client, or invoice management.
 
@@ -131,6 +142,16 @@ Do not put passwords, database credentials, or other secrets in ticket descripti
 ### Users and activity
 
 Administrators use **Users** to create accounts, assign roles, update user information, activate/deactivate accounts, and review role and activity pages. There is no public sign-up page. Create an individual account for each person and grant only the access needed for their work. Protect the final active administrator account; the system prevents removing or disabling the last active administrator.
+
+For assisted password recovery, open **Users > Edit** for a different active user. Under **Account recovery**, confirm your administrator password and choose **Issue temporary password**. The generated password is shown once; share it only with the verified account holder through an approved private channel. The issuance is audited without saving the password in the audit log. General user editing does not change passwords; use the dedicated recovery controls or **Change password** for your own account.
+
+### System settings
+
+Administrators open **Administration > System settings**. Editable options include organization name, support email, inactivity timeout, default list page size and stricter cost/water-quality limits. Confirm your current password to save. Changes persist in the database and are audited.
+
+The inactivity timeout is 5-120 minutes; list sizes are 10, 20, 25, 50 or 100. Policy settings cannot exceed the UAT cost ceiling of 100,000 or relax screening beyond pH 6.5-8.5, TDS 600 mg/L and turbidity 5 NTU. Changing limits re-evaluates current reports; it does not rewrite recorded costs or laboratory readings. Screening is not a drinking-water safety certificate.
+
+The deployment-status panel shows the environment, mail transport, application address/timezone, reset-link timing and session storage. A selected email transport does not prove delivery: the server operator must configure and test the provider. Database credentials, mail passwords and encryption keys are managed outside the web application and must never be entered in a support ticket.
 
 ### Reports and analytics
 

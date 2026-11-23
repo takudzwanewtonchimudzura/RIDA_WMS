@@ -18,7 +18,7 @@
                         <a href="{{ route('boreholes.certificate.download', $borehole) }}" class="btn btn-success btn-sm">
                             <i class="fas fa-file-signature me-1"></i> Certificate
                         </a>
-                        @if(auth()->user()->isAdmin())
+                        @if(auth()->user()->canApprove() && (int) $borehole->created_by !== (int) auth()->id())
                             <form action="{{ route($borehole->approved_at ? 'boreholes.unapprove' : 'boreholes.approve', $borehole) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('PATCH')
@@ -236,11 +236,11 @@
                                         @endforelse
                                         <tr>
                                             <td class="fw-bold">Drilled Depth:</td>
-                                            <td>{{ $borehole->final_borehole_depth_m ? $borehole->final_borehole_depth_m . ' m' : 'N/A' }}</td>
+                                            <td>{{ $borehole->recorded_depth !== null ? $borehole->recorded_depth . ' m' : 'N/A' }}</td>
                                         </tr>
                                         <tr>
                                             <td class="fw-bold">Blowing Yield:</td>
-                                            <td>{{ $borehole->blowing_yield ? $borehole->blowing_yield . ' l/s' : 'N/A' }}</td>
+                                            <td>{{ $borehole->recorded_yield !== null ? $borehole->recorded_yield . ' l/s' : 'N/A' }}</td>
                                         </tr>
                                         <tr>
                                             <td class="fw-bold">Development Hours:</td>

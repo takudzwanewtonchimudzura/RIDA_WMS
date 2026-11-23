@@ -14,7 +14,7 @@ class DashboardController extends Controller
     {
         $start = now()->startOfMonth()->subMonths(11);
         $readings = $this->scopeRecords($request, Borehole::query())
-            ->whereNotNull('ph')
+            ->where(fn ($q) => $q->whereNotNull('ph')->orWhereNotNull('tds_mg_l')->orWhereNotNull('turbidity_ntu'))
             ->whereDate('date', '>=', $start->toDateString())
             ->orderByDesc('date')
             ->first(['ph', 'tds_mg_l', 'turbidity_ntu', 'date']);
@@ -120,10 +120,7 @@ class DashboardController extends Controller
             return 0;
         }
 
-        $completeBoreholes = (clone $query)->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->whereNotNull('blowing_yield')
-            ->count();
+        $completeBoreholes = (clone $query)->complete()->count();
 
         return round(($completeBoreholes / $totalBoreholes) * 100);
     }
@@ -187,10 +184,7 @@ class DashboardController extends Controller
         $approvedBoreholes = (clone $boreholes)->whereNotNull('approved_at')->count();
         $approvalRate = $totalBoreholes > 0 ? ($approvedBoreholes / $totalBoreholes) * 100 : 0;
         
-        $completeBoreholes = (clone $boreholes)->whereNotNull('latitude')
-                                   ->whereNotNull('longitude')
-                                   ->whereNotNull('blowing_yield')
-                                   ->count();
+        $completeBoreholes = (clone $boreholes)->complete()->count();
         $completenessRate = $totalBoreholes > 0 ? ($completeBoreholes / $totalBoreholes) * 100 : 0;
 
         $dams = $this->scopeRecords($request, Dam::query());

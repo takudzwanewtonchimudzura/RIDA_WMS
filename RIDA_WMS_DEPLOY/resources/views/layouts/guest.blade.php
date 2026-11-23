@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#103d39">
-    <title>@yield('title', 'RIDA RWIMS')</title>
+    <title>@yield('title', 'Account') | {{ config('rwims.organization_name') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/rida-logo-32.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/rida-logo-180.png') }}">

@@ -63,7 +63,7 @@ class DamController extends Controller
         }
 
         $dams = $query->orderBy('created_at', 'desc')
-                      ->paginate(20)
+                      ->paginate(config('rwims.default_page_size'))
                       ->withQueryString();
 
         $provinces = (clone $visibleDams)->distinct('province')
@@ -132,7 +132,7 @@ class DamController extends Controller
         }
 
         $dams = $query->orderBy('created_at', 'desc')
-                      ->paginate(20)
+                      ->paginate(config('rwims.default_page_size'))
                       ->appends($request->except('page'));
 
         $stats = [
@@ -202,11 +202,7 @@ class DamController extends Controller
         $data = $request->validate([
             'name'                     => 'required|string|max:255|unique:dams,name',
             'village'                  => 'required|string|max:255',
-            'ward'                     => 'required|string|max:255',
-            'district'                 => 'required|string|max:255',
-            'province'                 => 'required|string|max:255',
-            'latitude'                 => 'nullable|numeric|between:-90,90',
-            'longitude'                => 'nullable|numeric|between:-180,180',
+            ...app(\App\Services\ZimbabweLocations::class)->rules(),
             'wall_length'              => 'nullable|numeric|min:0',
             'wall_height'              => 'nullable|numeric|min:0',
             'water_depth'              => 'nullable|numeric|min:0',
@@ -227,11 +223,6 @@ class DamController extends Controller
         $data['has_stone_pitching'] = $request->has('has_stone_pitching') ? true : false;
         $data['has_star_grass']     = $request->has('has_star_grass') ? true : false;
         $data['created_by']         = Auth::id();
-
-        if ($request->user()->isAdmin()) {
-            $data['approved_at'] = now();
-            $data['approved_by'] = $request->user()->id;
-        }
 
         try {
             $dam = Dam::create($data);
@@ -270,14 +261,14 @@ class DamController extends Controller
         $this->authorizeRecordView($request, $dam);
         $maintenanceRecords = $dam->maintenanceRecords()
             ->orderBy('maintenance_date', 'desc')
-            ->paginate(10);
+            ->paginate(config('rwims.default_page_size'));
 
         return view('dams.show', compact('dam', 'maintenanceRecords'));
     }
 
     public function approve(Request $request, Dam $dam)
     {
-        $this->authorizeAdministrator($request);
+        $this->authorizeApproval($request, $dam);
         if (!$dam->approved_at) {
             $dam->update(['approved_at' => now(), 'approved_by' => $request->user()->id]);
         }
@@ -287,7 +278,7 @@ class DamController extends Controller
 
     public function unapprove(Request $request, Dam $dam)
     {
-        $this->authorizeAdministrator($request);
+        $this->authorizeApproval($request, $dam);
         $dam->update(['approved_at' => null, 'approved_by' => null]);
 
         return redirect()->route('dams.show', $dam)->with('success', 'Dam approval removed.');
@@ -324,11 +315,7 @@ class DamController extends Controller
         $data = $request->validate([
             'name'                     => 'required|string|max:255|unique:dams,name,' . $dam->id,
             'village'                  => 'required|string|max:255',
-            'ward'                     => 'required|string|max:255',
-            'district'                 => 'required|string|max:255',
-            'province'                 => 'required|string|max:255',
-            'latitude'                 => 'nullable|numeric|between:-90,90',
-            'longitude'                => 'nullable|numeric|between:-180,180',
+            ...app(\App\Services\ZimbabweLocations::class)->rules(),
             'wall_length'              => 'nullable|numeric|min:0',
             'wall_height'              => 'nullable|numeric|min:0',
             'water_depth'              => 'nullable|numeric|min:0',

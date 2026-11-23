@@ -38,8 +38,8 @@ class BoreholeMapController extends Controller
                 'province' => $borehole->province,
                 'district' => $borehole->admin_district,
                 'locality' => $borehole->locality,
-                'depth' => $borehole->final_cased_depth ?? $borehole->final_borehole_depth_m,
-                'yield' => $borehole->blowing_yield ?? $borehole->yield_lps,
+                'depth' => $borehole->recorded_depth,
+                'yield' => $borehole->recorded_yield,
                 'status' => $this->getBoreholeStatus($borehole),
                 'popup_content' => $this->getPopupContent($borehole),
             ];
@@ -87,8 +87,8 @@ class BoreholeMapController extends Controller
                 <h6><strong>{$serial}</strong></h6>
                 <p><strong>Location:</strong> {$locality}, {$district}</p>
                 <p><strong>Province:</strong> {$province}</p>
-                <p><strong>Depth:</strong> " . number_format($borehole->final_cased_depth ?? $borehole->final_borehole_depth_m, 2) . " m</p>
-                <p><strong>Blowing Yield:</strong> " . number_format($borehole->blowing_yield ?? $borehole->yield_lps, 2) . " l/s</p>
+                <p><strong>Depth:</strong> " . ($borehole->recorded_depth === null ? 'N/A' : number_format($borehole->recorded_depth, 2) . ' m') . "</p>
+                <p><strong>Blowing Yield:</strong> " . ($borehole->recorded_yield === null ? 'N/A' : number_format($borehole->recorded_yield, 2) . ' l/s') . "</p>
                 <p><strong>Date:</strong> " . ($borehole->date ? $borehole->date->format('M d, Y') : 'N/A') . "</p>
                 <a href='" . route('boreholes.show', $borehole) . "' class='btn btn-sm btn-primary mt-2'>View Details</a>
             </div>
@@ -124,8 +124,8 @@ class BoreholeMapController extends Controller
                     'province' => $borehole->province,
                     'district' => $borehole->admin_district,
                     'locality' => $borehole->locality,
-                    'depth' => $borehole->final_cased_depth ?? $borehole->final_borehole_depth_m,
-                    'yield' => $borehole->blowing_yield ?? $borehole->yield_lps,
+                    'depth' => $borehole->recorded_depth,
+                    'yield' => $borehole->recorded_yield,
                     'status' => $this->getBoreholeStatus($borehole),
                     'popup' => $this->getPopupContent($borehole),
                 ]

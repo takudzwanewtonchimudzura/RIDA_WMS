@@ -31,7 +31,6 @@ class ReportController extends Controller
             'fundingData' => $this->reportService->getFundingDistribution($filters),
             'recentBoreholes' => $this->reportService->getRecentBoreholes($filters, 10),
             'achievements' => $this->reportService->getKeyAchievements($filters),
-            'recommendations' => $this->reportService->getRecommendations($filters),
             'period' => $this->getPeriodLabel($filters),
             // Add filter data
             'provinces' => $this->getProvinces(),
@@ -252,8 +251,8 @@ public function analyticsDashboard(Request $request)
     $data = [
         'filters' => $filters,
         'totalBoreholes' => $query->count(),
-        'averageYield' => $query->avg(DB::raw('COALESCE(NULLIF(blowing_yield, 0), yield_lps)')),
-        'averageDepth' => $query->avg(DB::raw('COALESCE(NULLIF(final_borehole_depth_m, 0), final_borehole_depth)')),
+        'averageYield' => $query->avg(DB::raw(Borehole::YIELD_EXPRESSION)),
+        'averageDepth' => $query->avg(DB::raw(Borehole::DEPTH_EXPRESSION)),
         'provincesCount' => (clone $query)->distinct()->count('province'),
         'provinces' => $this->getProvinces(),
         'agencies' => $this->getFundingAgencies(),
@@ -272,7 +271,7 @@ public function analyticsDashboard(Request $request)
     private function calculateYieldDistribution($query)
     {
         // Define yield ranges (in liters per second)
-        $yieldExpression = 'COALESCE(NULLIF(blowing_yield, 0), yield_lps)';
+        $yieldExpression = Borehole::YIELD_EXPRESSION;
         $yieldRanges = [
             '0-5' => [0, 5],
             '5-10' => [5, 10],

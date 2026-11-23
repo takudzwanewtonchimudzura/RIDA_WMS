@@ -9,7 +9,36 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, \Illuminate\Database\Eloquent\SoftDeletes, Concerns\AuditsDeletes;
+
+    public const ROLES = [
+        'admin' => 'Administrator',
+        'supervisor' => 'Supervisor / Provincial Engineer',
+        'operator' => 'Field Officer',
+        'finance' => 'Finance',
+        'stores' => 'Stores',
+        'viewer' => 'Viewer',
+    ];
+
+    public function canApprove(): bool
+    {
+        return in_array($this->role, ['admin', 'supervisor'], true);
+    }
+
+    public function canManageFinance(): bool
+    {
+        return in_array($this->role, ['admin', 'finance'], true);
+    }
+
+    public function canManageStores(): bool
+    {
+        return in_array($this->role, ['admin', 'stores'], true);
+    }
+
+    public function canCapture(): bool
+    {
+        return in_array($this->role, ['admin', 'operator', 'supervisor'], true);
+    }
 
     protected $fillable = [
         'name',
@@ -24,12 +53,17 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'password_version',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'last_seen_at' => 'datetime',
         'is_active' => 'boolean',
+        'password_version' => 'integer',
+        'must_change_password' => 'boolean',
+        'temporary_password_expires_at' => 'datetime',
     ];
 
     // Role checking methods

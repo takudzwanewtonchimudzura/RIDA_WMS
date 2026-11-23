@@ -7,7 +7,8 @@
     @auth
     <meta name="session-idle-timeout" content="{{ config('session.idle_timeout', 20) }}">
     @endauth
-    <title>@yield('title', 'RIDA RWIMS')</title>
+    @php $routeTitle = \Illuminate\Support\Str::headline(str_replace('.', ' ', request()->route()?->getName() ?? 'Dashboard')); @endphp
+    <title>@yield('title', $routeTitle) | {{ config('rwims.organization_name') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/rida-logo-32.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/rida-logo-180.png') }}">
@@ -32,6 +33,7 @@
         #sidebar { position: fixed; z-index: 1050; inset: 0 auto 0 0; display: flex; flex-direction: column; width: var(--sidebar-width); height: 100vh; height: 100dvh; color: #e7f0ef; background: var(--sidebar); transition: width .2s ease, transform .2s ease; }
         .sidebar-header { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem 1rem; border-bottom: 1px solid #ffffff20; }
         .brand { display: flex; align-items: center; gap: .7rem; min-width: 0; color: white; text-decoration: none; font-weight: 700; white-space: nowrap; }
+        .brand-text { overflow: hidden; text-overflow: ellipsis; }
         .brand img { height: 32px; width: 32px; border-radius: 6px; background: #fff; object-fit: contain; padding: 2px; }
         .sidebar-control, .mobile-toggle { display: inline-grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; border: 0; border-radius: 6px; background: transparent; color: inherit; }
         .sidebar-control:hover, .sidebar-control:focus-visible { background: var(--sidebar-hover); }
@@ -96,7 +98,7 @@
 <body>
     <aside id="sidebar" aria-label="Application navigation">
         <div class="sidebar-header">
-            <a href="{{ route('dashboard') }}" class="brand"><img src="{{ asset('images/rida-logo-192.png') }}" alt="RIDA logo"><span class="brand-text">RIDA RWIMS</span></a>
+            <a href="{{ route('dashboard') }}" class="brand"><img src="{{ asset('images/rida-logo-192.png') }}" alt="RIDA logo"><span class="brand-text">{{ config('rwims.organization_name') }}</span></a>
             <button type="button" class="sidebar-control" id="sidebarToggle" aria-label="Collapse navigation"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
         </div>
         <nav class="sidebar-menu" aria-label="Main navigation">
@@ -134,6 +136,21 @@
                 <div class="submenu {{ $usersActive ? 'open' : '' }}" id="submenu-users"><a href="{{ route('users.index') }}" class="submenu-item {{ request()->routeIs('users.index') ? 'active' : '' }}">All users</a><a href="{{ route('users.create') }}" class="submenu-item {{ request()->routeIs('users.create') ? 'active' : '' }}">Add user</a><a href="{{ route('users.roles') }}" class="submenu-item {{ request()->routeIs('users.roles') ? 'active' : '' }}">Roles & permissions</a><a href="{{ route('users.activity') }}" class="submenu-item {{ request()->routeIs('users.activity') ? 'active' : '' }}">User activity</a></div>
                 <a href="{{ route('clients.index') }}" class="menu-item {{ request()->routeIs('clients.*') ? 'active' : '' }}"><span class="menu-icon"><i class="fas fa-address-book" aria-hidden="true"></i></span><span class="menu-text">Clients</span></a>
                 <a href="{{ route('invoices.index') }}" class="menu-item {{ request()->routeIs('invoices.*') ? 'active' : '' }}"><span class="menu-icon"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i></span><span class="menu-text">Invoices</span></a>
+                <a href="{{ route('settings.edit') }}" class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}"><span class="menu-icon"><i class="fas fa-gear" aria-hidden="true"></i></span><span class="menu-text">System settings</span></a>
+            </div>
+            @endif
+            @if(auth()->user()->role === 'finance')
+            <div class="menu-group">
+                <div class="menu-group-title">FINANCE</div>
+                <a href="{{ route('clients.index') }}" class="menu-item">Clients</a>
+                <a href="{{ route('invoices.index') }}" class="menu-item">Invoices</a>
+            </div>
+            @endif
+            @if(auth()->user()->role === 'stores')
+            <div class="menu-group">
+                <div class="menu-group-title">STORES</div>
+                <a href="{{ route('consumables.categories.index') }}" class="menu-item">Categories</a>
+                <a href="{{ route('consumables.suppliers.index') }}" class="menu-item">Suppliers</a>
             </div>
             @endif
             @php $reportsActive = request()->routeIs('reports.*'); @endphp
@@ -178,13 +195,13 @@
         <header class="top-navbar">
             <div class="topbar-start">
                 <button type="button" class="mobile-toggle" id="mobileToggle" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
-                <h1 class="page-heading">@yield('page-title', $__env->yieldContent('title', 'Dashboard'))</h1>
+                <h1 class="page-heading">@yield('page-title', $__env->yieldContent('title', $routeTitle))</h1>
             </div>
             <div class="topbar-end">
                 @auth
                 <div class="dropdown">
                     <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user me-2" aria-hidden="true"></i><span class="user-dropdown-label">{{ auth()->user()->name }}</span></button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown"><li><form action="{{ route('logout') }}" method="POST">@csrf<button class="dropdown-item" type="submit"><i class="fas fa-right-from-bracket me-2" aria-hidden="true"></i>Log out</button></form></li></ul>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown"><li><a class="dropdown-item" href="{{ route('account.password.edit') }}">Change password</a></li><li><form action="{{ route('logout') }}" method="POST">@csrf<button class="dropdown-item" type="submit"><i class="fas fa-right-from-bracket me-2" aria-hidden="true"></i>Log out</button></form></li></ul>
                 </div>
                 @else
                 <a href="{{ route('login') }}" class="btn btn-outline-primary">Log in</a>
@@ -313,5 +330,19 @@
     </script>
     @stack('scripts')
     @yield('scripts')
+    @include('partials.location-script')
+    <script>
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            const isDelete = form.querySelector('input[name="_method"]')?.value.toUpperCase() === 'DELETE';
+            const clickConfirms = event.submitter?.getAttribute('onclick')?.includes('confirm(');
+            if ((isDelete || form.dataset.confirm) && !form.hasAttribute('onsubmit') && !clickConfirms) {
+                if (!window.confirm(form.dataset.confirm || 'Delete this record? It will be archived and logged.')) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }
+        }, true);
+    </script>
 </body>
 </html>

@@ -9,11 +9,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Dam extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Dam $dam) {
+            $dam->dam_code ??= 'DAM-' . strtoupper((string) \Illuminate\Support\Str::ulid());
+        });
+    }
 
     protected $fillable = [
         // Basic Information
         'name',
+        'dam_code',
         'village',
         'ward',
         'district',

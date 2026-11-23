@@ -41,7 +41,7 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
                         <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                               value="{{ old('email') }}" required placeholder="e.g. john@wims.local">
+                               value="{{ old('email') }}" required placeholder="e.g. john@rida.gov.zw">
                         @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -49,7 +49,7 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
                         <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                               required placeholder="Min 8 characters">
+                               required minlength="12" autocomplete="new-password" placeholder="12+ characters, upper/lowercase and a number">
                         @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
@@ -64,9 +64,9 @@
                         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
                         <select name="role" class="form-select @error('role') is-invalid @enderror" required>
                             <option value="">-- Select Role --</option>
-                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Administrator</option>
-                            <option value="operator" {{ old('role') == 'operator' ? 'selected' : '' }}>Field Operator</option>
-                            <option value="viewer" {{ old('role') == 'viewer' ? 'selected' : '' }}>Viewer</option>
+                            @foreach(\App\Models\User::ROLES as $role => $label)
+                            <option value="{{ $role }}" @selected(old('role') === $role)>{{ $label }}</option>
+                            @endforeach
                         </select>
                         @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -86,7 +86,8 @@
                     {{-- Active --}}
                     <div class="col-md-6 d-flex align-items-end">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                            <input type="hidden" name="is_active" value="0">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" value="1"
                                    {{ old('is_active', true) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold" for="is_active">Active Account</label>
                         </div>

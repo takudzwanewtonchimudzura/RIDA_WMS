@@ -46,4 +46,19 @@ class LoginController extends Controller
             ['is_active' => true]
         );
     }
+
+    protected function authenticated(Request $request, $user)
+    {
+        if ($user->temporary_password_expires_at && $user->temporary_password_expires_at->isPast()) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->withErrors(['email' => 'The temporary password has expired. Request a new password reset.']);
+        }
+        $request->session()->put('password_version', $user->password_version);
+        $user->forceFill(['last_login_at' => now(), 'last_seen_at' => now()])->save();
+        if ($user->must_change_password) {
+            return redirect()->route('account.password.edit');
+        }
+    }
 }

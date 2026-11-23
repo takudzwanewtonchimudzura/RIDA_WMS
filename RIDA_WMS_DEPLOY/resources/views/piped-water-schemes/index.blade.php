@@ -1,5 +1,6 @@
 {{-- resources/views/piped-water-schemes/index.blade.php --}}
 @extends('layouts.app')
+@section('title', 'Piped Water Schemes')
 
 @section('content')
 <div class="container">
@@ -31,9 +32,9 @@
                 <div class="col-md-3">
                     <select name="status" class="form-select">
                         <option value="">All Status</option>
-                        <option value="Functional" {{ request('status') == 'Functional' ? 'selected' : '' }}>Functional</option>
-                        <option value="Partially Functional" {{ request('status') == 'Partially Functional' ? 'selected' : '' }}>Partially Functional</option>
-                        <option value="Non Functional" {{ request('status') == 'Non Functional' ? 'selected' : '' }}>Non Functional</option>
+                        @foreach(\App\Models\InfrastructureStatus::VALUES as $status)
+                            <option value="{{ $status }}" @selected(request('status') === $status)>{{ $status }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-3">

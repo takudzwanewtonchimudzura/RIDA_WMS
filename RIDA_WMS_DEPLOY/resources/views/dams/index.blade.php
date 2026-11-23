@@ -70,7 +70,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                By Province</div>
+                                Provinces Represented</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['by_province']->count() }}</div>
                         </div>
                         <div class="col-auto">
@@ -151,7 +151,7 @@
                 <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
                     <thead class="thead-light">
                         <tr>
-                            <th>ID</th>
+                            <th>Dam Code</th>
                             <th>Name</th>
                             <th>Location</th>
                             <th>Capacity (m³)</th>
@@ -164,7 +164,7 @@
                     <tbody>
                         @forelse($dams as $dam)
                         <tr>
-                            <td>{{ $dam->id }}</td>
+                            <td>{{ $dam->dam_code }}</td>
                             <td>
                                 <strong>{{ $dam->name }}</strong><br>
                                 <small class="text-muted">{{ $dam->village }}</small>

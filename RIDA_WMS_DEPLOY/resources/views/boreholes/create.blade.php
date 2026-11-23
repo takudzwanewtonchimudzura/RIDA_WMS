@@ -68,6 +68,7 @@
                 @csrf
                 @if($prospectingSite)
                     <input type="hidden" name="prospecting_site_id" value="{{ $prospectingSite->id }}">
+                    <div class="mb-3"><label for="drilled_at" class="form-label">Drilling completion date and time *</label><input id="drilled_at" type="datetime-local" name="drilled_at" class="form-control" value="{{ old('drilled_at') }}" required><small>Must be after the independent site approval and not in the future.</small></div>
                     <div class="alert alert-info" role="status">Starting from approved prospecting {{ $prospectingSite->reference }}.</div>
                 @endif
                 
@@ -174,7 +175,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="rig_number" class="form-label">RIG NUMBER</label>
+                                <label for="rig_number" class="form-label">Rig Number</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-hashtag"></i>
                                     <input type="text" name="rig_number" id="rig_number"
@@ -183,7 +184,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="rig_type" class="form-label">RIG TYPE</label>
+                                <label for="rig_type" class="form-label">Rig Type</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-cogs"></i>
                                     <input type="text" name="rig_type" id="rig_type"
@@ -201,7 +202,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="rig_chasis_number" class="form-label">RIG CHASIS NUMBER</label>
+                                <label for="rig_chasis_number" class="form-label">Rig Chassis Number</label>
                                 <div class="input-group-icon">
                                     <i class="fas fa-truck"></i>
                                     <input type="text" name="rig_chasis_number" id="rig_chasis_number"
@@ -225,13 +226,13 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="drilling_date_from" class="form-label">Drilling Dates - FROM</label>
+                                <label for="drilling_date_from" class="form-label">Drilling Dates - From</label>
                                 <input type="date" name="drilling_date_from" id="drilling_date_from"
                                     value="{{ old('drilling_date_from') }}" class="form-control">
                             </div>
 
                             <div class="mb-3">
-                                <label for="drilling_date_to" class="form-label">Drilling Dates - TO</label>
+                                <label for="drilling_date_to" class="form-label">Drilling Dates - To</label>
                                 <input type="date" name="drilling_date_to" id="drilling_date_to"
                                     value="{{ old('drilling_date_to') }}" class="form-control">
                             </div>
@@ -893,7 +894,7 @@
                             <label for="latitude" class="form-label">Latitude</label>
                             <div class="input-group-icon">
                                 <i class="fas fa-globe-americas"></i>
-                                <input type="number" step="0.000001" name="latitude" id="latitude"
+                                <input type="number" step="any" name="latitude" id="latitude"
                                     value="{{ old('latitude', $prospectingSite?->latitude ?? '') }}" class="form-control" placeholder="e.g., -15.123456">
                             </div>
                         </div>
@@ -902,7 +903,7 @@
                             <label for="longitude" class="form-label">Longitude</label>
                             <div class="input-group-icon">
                                 <i class="fas fa-globe-americas"></i>
-                                <input type="number" step="0.000001" name="longitude" id="longitude"
+                                <input type="number" step="any" name="longitude" id="longitude"
                                     value="{{ old('longitude', $prospectingSite?->longitude ?? '') }}" class="form-control" placeholder="e.g., 28.123456">
                             </div>
                         </div>
@@ -981,7 +982,7 @@
                             <label for="total_cost" class="form-label">Total Cost</label>
                             <div class="input-group-icon">
                                 <i class="fas fa-money-bill-wave"></i>
-                                <input type="number" step="0.01" name="total_cost" id="total_cost"
+                                <input type="number" min="0" max="{{ config('rwims.capture_cost_limit') }}" step="0.01" name="total_cost" id="total_cost"
                                     value="{{ old('total_cost') }}" class="form-control" placeholder="Total cost">
                             </div>
                         </div>
@@ -990,10 +991,6 @@
                             <label for="cost_currency" class="form-label">Currency</label>
                             <select name="cost_currency" id="cost_currency" class="form-select">
                                 <option value="USD" {{ old('cost_currency', 'USD') == 'USD' ? 'selected' : '' }}>USD</option>
-                                <option value="ZMW" {{ old('cost_currency') == 'ZMW' ? 'selected' : '' }}>ZMW</option>
-                                <option value="ZAR" {{ old('cost_currency') == 'ZAR' ? 'selected' : '' }}>ZAR</option>
-                                <option value="GBP" {{ old('cost_currency') == 'GBP' ? 'selected' : '' }}>GBP</option>
-                                <option value="EUR" {{ old('cost_currency') == 'EUR' ? 'selected' : '' }}>EUR</option>
                             </select>
                         </div>
                     </div>

@@ -17,8 +17,9 @@ class BoreholeSeeder extends Seeder
         }
 
         // Get some users to assign as creators
-        $users = User::limit(5)->get();
+        $users = User::where('role', 'operator')->get();
         $userIds = $users->pluck('id')->toArray();
+        $approver = User::where('role', 'supervisor')->firstOrFail();
 
         // Zimbabwean provinces, districts, and villages
         $provinces = config('zimbabwe.provinces');
@@ -28,10 +29,11 @@ class BoreholeSeeder extends Seeder
 
         // Create 20 boreholes
         for ($i = 1; $i <= 20; $i++) {
-            $province = array_rand($provinces);
-            $district = $provinces[$province][array_rand($provinces[$province])];
+            $location = app(\App\Services\ZimbabweLocations::class)->sample($i);
+            $province = $location['province'];
+            $district = $location['district'];
             $village = 'Village ' . chr(65 + rand(0, 25)) . rand(1, 10);
-            $ward = 'Ward ' . rand(1, 30);
+            $ward = $location['ward'];
 
             $boreholes[] = [
                 'borehole_serial_no' => 'BH-' . str_pad($i, 4, '0', STR_PAD_LEFT),
@@ -46,8 +48,8 @@ class BoreholeSeeder extends Seeder
                 'date' => Carbon::now()->subDays(rand(1, 365)),
                 
                 // Location
-                'latitude' => $bounds['lat_min'] + (rand(0, 1000) / 1000) * ($bounds['lat_max'] - $bounds['lat_min']),
-                'longitude' => $bounds['lng_min'] + (rand(0, 1000) / 1000) * ($bounds['lng_max'] - $bounds['lng_min']),
+                'latitude' => $location['latitude'],
+                'longitude' => $location['longitude'],
                 'grid_reference' => 'GRID' . rand(1000, 9999),
                 'elevation' => rand(800, 1500),
                 
@@ -79,7 +81,7 @@ class BoreholeSeeder extends Seeder
                 'water_color' => ['Clear', 'Slightly Cloudy', 'Brownish'][rand(0, 2)],
                 'odor' => ['None', 'Slight', 'Earth'][rand(0, 2)],
                 'taste' => ['Good', 'Slightly Salty', 'Metallic'][rand(0, 2)],
-                'water_quality_remarks' => 'Water quality acceptable for domestic use',
+                'water_quality_remarks' => 'UAT sample readings; assess measured parameters against screening limits.',
                 
                 // Pump Installation
                 'pipe_length_m' => rand(60, 120),
@@ -95,12 +97,12 @@ class BoreholeSeeder extends Seeder
                 'project_name' => 'Water Project ' . rand(1, 5),
                 'contractor' => ['Zimbabwe Drilling Co.', 'Water Wells Ltd.', 'Aqua Drillers Zimbabwe'][rand(0, 2)],
                 'number_of_beneficiaries' => rand(500, 2000),
-                'total_cost' => rand(5000000, 20000000),
+                'total_cost' => rand(1000, 5000),
                 'cost_currency' => 'USD',
                 
                 // System Fields
                 'created_by' => $userIds[array_rand($userIds)],
-                'approved_by' => $userIds[array_rand($userIds)],
+                'approved_by' => $approver->id,
                 'approved_at' => Carbon::now()->subDays(rand(1, 30)),
                 'created_at' => Carbon::now()->subDays(rand(31, 90)),
                 'updated_at' => Carbon::now()->subDays(rand(1, 30)),

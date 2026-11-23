@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class IrrigationMaintenance extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = [
         // Scheme Reference

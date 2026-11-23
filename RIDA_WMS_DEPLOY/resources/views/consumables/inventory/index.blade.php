@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div><p class="text-uppercase text-muted small fw-semibold mb-1">Stores</p><h1 class="h3 mb-0">Consumables inventory</h1></div>
-        @if(auth()->user()->isAdmin())<a href="{{ route('consumables.inventory.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1" aria-hidden="true"></i>Add stock item</a>@endif
+        @if(auth()->user()->canManageStores())<a href="{{ route('consumables.inventory.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1" aria-hidden="true"></i>Add stock item</a>@endif
     </div>
     @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert alert-danger" role="alert">{{ session('error') }}</div>@endif

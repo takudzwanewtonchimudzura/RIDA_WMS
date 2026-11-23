@@ -20,7 +20,7 @@ class SupportTicketController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        $tickets = $query->paginate(20)->withQueryString();
+        $tickets = $query->paginate(config('rwims.default_page_size'))->withQueryString();
         return view('tickets.index', compact('tickets'));
     }
 

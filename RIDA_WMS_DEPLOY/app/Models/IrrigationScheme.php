@@ -9,13 +9,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class IrrigationScheme extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = [
         // Basic Information
         'name',
         'village',
         'ward',
+        'province',
+        'district',
         
         // Irrigation Details
         'irrigation_type',

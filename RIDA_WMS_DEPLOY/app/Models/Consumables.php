@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Supplier extends Model
 {
-    use HasFactory;
+    use HasFactory, \Illuminate\Database\Eloquent\SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = [
         'name', 'contact_person', 'email', 'phone', 'address',
@@ -37,7 +37,7 @@ class Supplier extends Model
  */
 class ConsumableCategory extends Model
 {
-    use HasFactory;
+    use HasFactory, \Illuminate\Database\Eloquent\SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = ['name', 'description'];
 
@@ -156,12 +156,12 @@ class StockRequest extends Model
 
     public function requester(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
     }
 
     public function items(): HasMany
@@ -241,7 +241,7 @@ class UsageReport extends Model
 
     public function reporter(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function items(): HasMany
@@ -307,7 +307,7 @@ class PurchaseOrder extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function items(): HasMany

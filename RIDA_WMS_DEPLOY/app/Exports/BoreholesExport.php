@@ -73,8 +73,8 @@ class BoreholesExport implements FromCollection, WithHeadings, WithMapping, With
             $borehole->ward,
             $borehole->latitude && $borehole->longitude ? 
                 $borehole->latitude . ', ' . $borehole->longitude : 'N/A',
-            $borehole->final_borehole_depth,
-            $borehole->yield_lps,
+            $borehole->recorded_depth,
+            $borehole->recorded_yield,
             $borehole->ph ?? 'N/A',
             $borehole->total_cost ?? 0,
             $borehole->number_of_beneficiaries ?? 0,

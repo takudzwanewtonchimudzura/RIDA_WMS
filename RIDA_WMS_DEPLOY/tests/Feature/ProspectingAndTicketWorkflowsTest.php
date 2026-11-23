@@ -21,11 +21,7 @@ class ProspectingAndTicketWorkflowsTest extends TestCase
             $this->post(route('prospecting.store'), [
                 'project_name' => "North Project {$index}",
                 'village' => 'Chigo A',
-                'ward' => '4',
-                'district' => 'North District',
-                'province' => 'Midlands Province',
-                'latitude' => -19.2,
-                'longitude' => 29.8,
+                ...$this->location(),
                 'survey_date' => '2026-09-20',
                 'siting_agency' => 'PISP',
                 'prospector_name' => $operator->name,
@@ -61,23 +57,34 @@ class ProspectingAndTicketWorkflowsTest extends TestCase
             ->assertOk()
             ->assertSee('Starting from approved prospecting');
 
-        $this->postJson(route('boreholes.store'), [
+        $payload = [
             'prospecting_site_id' => $site->id,
             'borehole_serial_no' => 'BH-FROM-PR-01',
-            'province' => 'Midlands Province',
-            'admin_district' => 'North District',
+            ...$this->location(true),
             'locality' => 'Chigo A',
             'village' => 'Chigo A',
-            'ward' => '4',
+            'drilled_at' => now()->toDateTimeString(),
             'date' => '2026-09-25',
             'project_name' => 'North Project',
-        ])->assertCreated();
+        ];
+        $this->postJson(route('boreholes.store'), array_replace($payload, $this->location(true, 6)))
+            ->assertUnprocessable();
+        $this->postJson(route('boreholes.store'), array_replace($payload, ['longitude' => $payload['longitude'] + 0.0001]))
+            ->assertUnprocessable()->assertJsonValidationErrors('longitude');
+        $this->assertSame('approved', $site->fresh()->status);
+        $this->postJson(route('boreholes.store'), $payload)->assertCreated();
 
         $this->assertDatabaseHas('prospecting_sites', ['id' => $site->id, 'status' => 'drilled']);
         $this->assertDatabaseHas('boreholes', [
             'borehole_serial_no' => 'BH-FROM-PR-01',
             'prospecting_site_id' => $site->id,
         ]);
+        $borehole = \App\Models\Borehole::where('borehole_serial_no', 'BH-FROM-PR-01')->firstOrFail();
+        unset($payload['prospecting_site_id']);
+        $this->putJson(route('boreholes.update', $borehole), array_replace($payload, ['latitude' => $payload['latitude'] + 0.0001]))
+            ->assertUnprocessable()->assertJsonValidationErrors('latitude');
+        $this->putJson(route('boreholes.update', $borehole), $payload + ['prospecting_site_id' => null])
+            ->assertUnprocessable()->assertJsonValidationErrors('prospecting_site_id');
     }
 
     public function test_ticket_requesters_are_scoped_and_admin_can_resolve_and_assign(): void

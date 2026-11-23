@@ -13,7 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
-        $middleware->web(append: [\App\Http\Middleware\LogoutInactiveUsers::class]);
+        $middleware->web(append: [
+            \App\Http\Middleware\ApplySystemSettings::class,
+            \App\Http\Middleware\LogoutInactiveUsers::class,
+            \App\Http\Middleware\EnforcePasswordState::class,
+            \App\Http\Middleware\EnforceModuleRoles::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -15,7 +15,7 @@ class SchemeMaintenanceController extends Controller
     {
         $maintenances = $this->scopeRecordsToOwner($request, SchemeMaintenance::query())
             ->orderByDesc('date_repaired')
-            ->paginate(20);
+            ->paginate(config('rwims.default_page_size'));
 
         return view('scheme-maintenances.index', compact('maintenances'));
     }

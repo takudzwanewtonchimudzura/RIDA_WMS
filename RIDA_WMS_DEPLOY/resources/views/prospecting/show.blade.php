@@ -9,6 +9,14 @@
         <span class="badge text-bg-{{ ['submitted' => 'warning', 'approved' => 'success', 'rejected' => 'danger', 'drilled' => 'primary'][$prospectingSite->status] }} fs-6">{{ str_replace('_', ' ', ucfirst($prospectingSite->status)) }}</span>
     </div>
     @if(session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    <div class="small text-muted mb-3">
+        Submitted: {{ $prospectingSite->submitted_at?->format('d M Y H:i') ?? 'Not recorded' }}.
+        Reviewed: {{ $prospectingSite->reviewed_at?->format('d M Y H:i') ?? 'Pending' }}
+        by {{ $prospectingSite->reviewer?->name ?? 'Unassigned' }}.
+        Drilled: {{ $prospectingSite->drilled_at?->format('d M Y H:i') ?? 'Not recorded' }}
+        by {{ \App\Models\User::withTrashed()->find($prospectingSite->drilled_by)?->name ?? 'Unassigned' }}.
+    </div>
     <div class="border rounded p-4 mb-4">
         <div class="row g-3">
             <div class="col-md-6"><div class="small text-muted">Project</div><div>{{ $prospectingSite->project_name ?: 'Unassigned project' }}</div></div>
@@ -25,7 +33,10 @@
         </div>
     </div>
 
-    @if(auth()->user()->isAdmin() && $prospectingSite->status === 'submitted')
+    @if($prospectingSite->status === 'submitted' && auth()->user()->canCapture())
+        <a href="{{ route('prospecting.edit', $prospectingSite) }}" class="btn btn-outline-primary mb-3">Correct survey / location</a>
+    @endif
+    @if(auth()->user()->canApprove() && (int) $prospectingSite->created_by !== (int) auth()->id() && $prospectingSite->status === 'submitted')
         <form method="POST" action="{{ route('prospecting.decide', $prospectingSite) }}" class="border rounded p-4 mb-3">
             @csrf @method('PATCH')
             <h2 class="h5">Review site</h2>
@@ -42,6 +53,8 @@
         @endif
         <form method="POST" action="{{ route('prospecting.mark-drilled', $prospectingSite) }}" onsubmit="return confirm('Mark this approved prospecting site as drilled?')">
             @csrf @method('PATCH')
+            <label for="drilled_at" class="form-label">Drilling completion date and time *</label>
+            <input id="drilled_at" type="datetime-local" name="drilled_at" class="form-control mb-2" value="{{ old('drilled_at') }}" required>
             <button type="submit" class="btn btn-primary">Mark as drilled</button>
         </form>
     @endif

@@ -34,6 +34,11 @@ Auth::routes(['register' => false]);
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
+    Route::get('/account/password', [\App\Http\Controllers\AccountPasswordController::class, 'edit'])->name('account.password.edit');
+    Route::put('/account/password', [\App\Http\Controllers\AccountPasswordController::class, 'update'])->middleware('throttle:password-change')->name('account.password.update');
+    Route::post('/users/{user}/temporary-password', [\App\Http\Controllers\AccountPasswordController::class, 'issueTemporary'])->middleware('throttle:temporary-password')->name('users.temporary-password');
+    Route::get('/settings', [\App\Http\Controllers\SystemSettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [\App\Http\Controllers\SystemSettingsController::class, 'update'])->middleware('throttle:settings-update')->name('settings.update');
 
     // Keeps the session alive while the user is actively using the app.
     Route::post('/session/heartbeat', fn () => response()->noContent())->name('session.heartbeat');
@@ -56,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Prospecting and ticket workflows
     Route::resource('prospecting', ProspectingController::class)
-        ->only(['index', 'create', 'store', 'show'])
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
         ->parameters(['prospecting' => 'prospectingSite']);
     Route::patch('/prospecting/{prospectingSite}/decision', [ProspectingController::class, 'decide'])->name('prospecting.decide');
     Route::patch('/prospecting/{prospectingSite}/mark-drilled', [ProspectingController::class, 'markDrilled'])->name('prospecting.mark-drilled');

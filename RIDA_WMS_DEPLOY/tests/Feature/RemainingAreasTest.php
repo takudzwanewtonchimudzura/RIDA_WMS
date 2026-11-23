@@ -53,7 +53,7 @@ class RemainingAreasTest extends TestCase
 
         $this->get(route('piped-water-schemes.quality'))
             ->assertOk()
-            ->assertSee('Meets Standards');
+            ->assertSee('Meets Recorded Limits');
         $this->get(route('piped-water-schemes.quality-tests.history', $scheme))
             ->assertOk()
             ->assertSee('01 Oct 2026');

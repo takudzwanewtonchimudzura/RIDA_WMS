@@ -84,7 +84,7 @@
                             <td>
                                 @php
                                     $roleColors = ['admin'=>'danger','operator'=>'primary','viewer'=>'success'];
-                                    $roleLabels = ['admin'=>'Admin','operator'=>'Field Operator','viewer'=>'Viewer'];
+                                    $roleLabels = \App\Models\User::ROLES;
                                     $color = $roleColors[$user->role] ?? 'secondary';
                                     $label = $roleLabels[$user->role] ?? ucfirst($user->role);
                                 @endphp
@@ -99,7 +99,7 @@
                                     <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
                                 @endif
                             </td>
-                            <td class="text-muted small">{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Never' }}</td>
+                            <td class="text-muted small">{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : ($user->last_seen_at ? 'Last access: ' . $user->last_seen_at->diffForHumans() . '; login not recorded' : 'Never') }}</td>
                             <td class="text-end pe-4">
                                 <div class="d-flex gap-2 justify-content-end">
                                     <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
@@ -130,6 +130,7 @@
                     </tbody>
                 </table>
             </div>
+            <div class="px-3 pt-3">{{ $users->links() }}</div>
         </div>
     </div>
 </div>

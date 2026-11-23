@@ -75,19 +75,15 @@
                         <td>{{ $borehole->borehole_serial_no }}</td>
                         <td>{{ $borehole->locality }}, {{ $borehole->admin_district }}</td>
                         <td>
-                            @if($borehole->final_depth_m)
-                                {{ number_format($borehole->final_depth_m, 2) }} m
-                            @elseif($borehole->final_cased_depth)
-                                {{ number_format($borehole->final_cased_depth, 2) }} m
-                            @elseif($borehole->rdd_depth)
-                                {{ number_format($borehole->rdd_depth, 2) }} m
+                            @if($borehole->recorded_depth !== null)
+                                {{ number_format($borehole->recorded_depth, 2) }} m
                             @else
                                 <span class="text-muted">N/A</span>
                             @endif
                         </td>
                         <td>
-                            @if($borehole->blowing_yield)
-                                {{ number_format($borehole->blowing_yield, 2) }} l/s
+                            @if($borehole->recorded_yield !== null)
+                                {{ number_format($borehole->recorded_yield, 2) }} l/s
                             @else
                                 <span class="text-muted">N/A</span>
                             @endif

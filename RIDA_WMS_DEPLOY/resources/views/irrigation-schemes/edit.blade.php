@@ -15,6 +15,7 @@
 			</div>
 			<div class="card-body">
 				<form action="{{ route('irrigation-schemes.update', $scheme) }}" method="POST">
+                    @include('partials.province-district', ['locationRecord' => $scheme])
 					@csrf
 					@method('PUT')
 					<div class="row">
@@ -91,7 +92,7 @@
 						<div class="col-md-4 mb-3">
 							<label for="functionality" class="form-label">Functionality *</label>
 							<select id="functionality" name="functionality" class="form-select @error('functionality') is-invalid @enderror" required>
-								@foreach(['Functional', 'Partially Functional', 'Nonfunctional'] as $status)
+								@foreach(\App\Models\InfrastructureStatus::VALUES as $status)
 									<option value="{{ $status }}" @selected(old('functionality', $scheme->functionality) === $status)>{{ $status }}</option>
 								@endforeach
 							</select>

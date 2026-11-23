@@ -63,17 +63,17 @@
                         @forelse($users as $user)
                         @php
                             $roleColors = ['admin' => 'danger', 'operator' => 'primary', 'viewer' => 'success'];
-                            $roleLabels = ['admin' => 'Admin', 'operator' => 'Field Operator', 'viewer' => 'Viewer'];
+                            $roleLabels = \App\Models\User::ROLES;
                             $color = $roleColors[$user->role] ?? 'secondary';
                             $label = $roleLabels[$user->role] ?? ucfirst($user->role);
 
                             $activityLevel = 'Never logged in';
                             $activityColor = 'secondary';
-                            if ($user->last_login_at) {
-                                $diff = now()->diffInDays($user->last_login_at);
-                                if ($diff === 0) { $activityLevel = 'Today'; $activityColor = 'success'; }
-                                elseif ($diff <= 7) { $activityLevel = 'This week'; $activityColor = 'info'; }
-                                elseif ($diff <= 30) { $activityLevel = 'This month'; $activityColor = 'primary'; }
+                            $lastAccess = $user->last_seen_at ?? $user->last_login_at;
+                            if ($lastAccess) {
+                                if ($lastAccess->isToday()) { $activityLevel = 'Today'; $activityColor = 'success'; }
+                                elseif ($lastAccess->between(now()->startOfWeek(), now())) { $activityLevel = 'This week'; $activityColor = 'info'; }
+                                elseif ($lastAccess->between(now()->startOfMonth(), now())) { $activityLevel = 'This month'; $activityColor = 'primary'; }
                                 else { $activityLevel = 'Inactive'; $activityColor = 'warning'; }
                             }
                         @endphp
@@ -103,8 +103,9 @@
                                     {{ $user->last_login_at->format('d M Y, H:i') }}<br>
                                     <span class="text-muted">{{ $user->last_login_at->diffForHumans() }}</span>
                                 @else
-                                    <span class="text-muted fst-italic">Never</span>
+                                    <span class="text-muted fst-italic">{{ $user->last_seen_at ? 'Login not recorded' : 'Never' }}</span>
                                 @endif
+                                @if($user->last_seen_at)<br><span class="text-muted">Last access: {{ $user->last_seen_at->format('d M Y, H:i') }}</span>@endif
                             </td>
                             <td class="text-muted small">{{ $user->created_at->format('d M Y') }}</td>
                             <td class="text-end pe-4">
@@ -121,6 +122,7 @@
                     </tbody>
                 </table>
             </div>
+            <div class="px-3 pt-3">{{ $users->links() }}</div>
         </div>
     </div>
 </div>

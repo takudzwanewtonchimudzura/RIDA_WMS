@@ -17,7 +17,7 @@ class IrrigationSchemeController extends Controller
     public function index(Request $request)
     {
         $schemes = $this->scopeRecordsToOwner($request, IrrigationScheme::query())
-            ->orderBy('created_at', 'desc')->paginate(20);
+            ->orderBy('created_at', 'desc')->paginate(config('rwims.default_page_size'));
         return view('irrigation-schemes.index', compact('schemes'));
     }
 
@@ -109,7 +109,7 @@ class IrrigationSchemeController extends Controller
         return [
             'name' => 'required|string|max:255',
             'village' => 'required|string|max:255',
-            'ward' => 'required|string|max:255',
+            ...app(\App\Services\ZimbabweLocations::class)->rules(coordinates: false),
             'irrigation_type' => 'required|string|max:255',
             'water_source_type' => 'required|string|max:255',
             'year_established' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -121,9 +121,9 @@ class IrrigationSchemeController extends Controller
             'plot_size' => 'nullable|numeric|min:0',
             'crop_pattern' => 'nullable|string',
             'total_storage_tanks_m3' => 'nullable|numeric|min:0',
-            'functionality' => 'required|in:Functional,Partially Functional,Nonfunctional',
+            'functionality' => ['required', \Illuminate\Validation\Rule::in(\App\Models\InfrastructureStatus::VALUES)],
             'functionality_comments' => 'nullable|string',
-            'fund_amount_available' => 'nullable|numeric|min:0',
+            'fund_amount_available' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'committee_total_members' => 'nullable|integer|min:0',
             'committee_women' => 'nullable|integer|min:0',
             'committee_men' => 'nullable|integer|min:0',

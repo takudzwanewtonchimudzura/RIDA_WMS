@@ -39,7 +39,7 @@ class WaterQualityTestController extends Controller
         $tests = $pipedWaterScheme->qualityTests()
             ->with('tester')
             ->latest('tested_at')
-            ->paginate(20)
+            ->paginate(config('rwims.default_page_size'))
             ->withQueryString();
 
         return view('piped-water-schemes.quality-history', compact('pipedWaterScheme', 'tests'));

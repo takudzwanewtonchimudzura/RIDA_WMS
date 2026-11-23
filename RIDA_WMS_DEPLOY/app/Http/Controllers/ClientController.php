@@ -24,7 +24,7 @@ class ClientController extends Controller
                 });
             })
             ->orderBy('name')
-            ->paginate(20)
+            ->paginate(config('rwims.default_page_size'))
             ->withQueryString();
 
         $clients->getCollection()->each(function (Client $client) {
@@ -98,6 +98,6 @@ class ClientController extends Controller
 
     private function ensureAdmin(Request $request): void
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        abort_unless($request->user()->canManageFinance(), 403);
     }
 }

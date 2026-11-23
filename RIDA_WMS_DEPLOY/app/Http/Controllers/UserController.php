@@ -26,7 +26,7 @@ class UserController extends Controller
     {
         $this->requireAdmin();
 
-        $users = User::orderBy('created_at', 'desc')->get();
+        $users = User::orderBy('created_at', 'desc')->paginate(config('rwims.default_page_size'));
 
         $stats = [
             'total'    => User::count(),
@@ -56,9 +56,9 @@ class UserController extends Controller
 
         $request->validate([
             'name'       => 'required|string|max:255',
-            'email'      => 'required|string|email|max:255|unique:users',
-            'password'   => 'required|string|min:8|confirmed',
-            'role'       => 'required|in:admin,operator,viewer',
+            'email'      => 'required|string|email|max:255|ends_with:@rida.gov.zw|unique:users',
+            'password'   => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(12)->mixedCase()->numbers()],
+            'role'       => ['required', \Illuminate\Validation\Rule::in(array_keys(User::ROLES))],
             'phone'      => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'is_active'  => 'nullable|boolean',
@@ -106,8 +106,9 @@ class UserController extends Controller
 
         $request->validate([
             'name'       => 'required|string|max:255',
-            'email'      => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role'       => 'required|in:admin,operator,viewer',
+            'email'      => 'required|string|email|max:255|ends_with:@rida.gov.zw|unique:users,email,' . $user->id,
+            'password'   => 'prohibited',
+            'role'       => ['required', \Illuminate\Validation\Rule::in(array_keys(User::ROLES))],
             'phone'      => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'is_active'  => 'nullable|boolean',
@@ -119,14 +120,6 @@ class UserController extends Controller
         if ($user->isAdmin() && $user->is_active && ($data['role'] !== 'admin' || !$data['is_active'])
             && User::where('role', 'admin')->where('is_active', true)->count() <= 1) {
             return redirect()->back()->withInput()->with('error', 'You cannot remove the last active administrator.');
-        }
-
-        // Update password only if provided
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => 'string|min:8|confirmed',
-            ]);
-            $data['password'] = Hash::make($request->password);
         }
 
         $user->update($data);
@@ -189,12 +182,12 @@ class UserController extends Controller
             'admin' => [
                 'label'       => 'Administrator',
                 'color'       => 'danger',
-                'description' => 'Full access to all system features including user management.',
+                'description' => 'System-wide administration and user management. Approval requires a different person from the record creator.',
                 'permissions' => [
                     'Manage all users',
                     'Create, edit, delete boreholes',
                     'Create, edit, delete dams',
-                    'Approve/unapprove records',
+                    'Approve/unapprove records created by others',
                     'View all reports',
                     'Export data',
                     'System settings',
@@ -229,6 +222,19 @@ class UserController extends Controller
             ],
         ];
 
+        foreach ([
+            'supervisor' => ['Review and approve records created by others', 'Review prospecting submissions'],
+            'finance' => ['Manage clients', 'Create and issue invoices', 'Record payments and review costs'],
+            'stores' => ['Manage inventory, suppliers and categories', 'Receive, adjust and issue approved stock'],
+        ] as $role => $permissions) {
+            $roles[$role] = [
+                'label' => User::ROLES[$role],
+                'color' => 'info',
+                'description' => implode('. ', $permissions) . '.',
+                'permissions' => $permissions,
+                'count' => User::where('role', $role)->count(),
+            ];
+        }
         return view('users.roles', compact('roles'));
     }
 
@@ -239,12 +245,12 @@ class UserController extends Controller
     {
         $this->requireAdmin();
 
-        $users = User::orderBy('last_login_at', 'desc')->get();
+        $users = User::orderBy('last_login_at', 'desc')->paginate(config('rwims.default_page_size'));
 
         $stats = [
             'total'          => User::count(),
-            'active_today'   => User::whereDate('last_login_at', today())->count(),
-            'active_week'    => User::where('last_login_at', '>=', now()->subWeek())->count(),
+            'active_today'   => User::whereDate('last_seen_at', today())->count(),
+            'active_week'    => User::whereBetween('last_seen_at', [now()->startOfWeek(), now()])->count(),
             'never_logged_in' => User::whereNull('last_login_at')->count(),
         ];
 

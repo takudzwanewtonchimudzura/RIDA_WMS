@@ -30,7 +30,7 @@ class PipedWaterSchemeController extends Controller
             $query->where('functionality', $request->input('status'));
         }
         // Order and paginate results
-        $schemes = $query->orderBy('name')->paginate(20)->withQueryString();
+        $schemes = $query->orderBy('name')->paginate(config('rwims.default_page_size'))->withQueryString();
 
         return view('piped-water-schemes.index', compact('schemes'));
     }
@@ -154,7 +154,7 @@ class PipedWaterSchemeController extends Controller
         return [
             'name' => 'required|string|max:255',
             'village' => 'required|string|max:255',
-            'ward' => 'required|string|max:255',
+            ...app(\App\Services\ZimbabweLocations::class)->rules(coordinates: false),
             'water_source' => 'required|in:borehole,deep well,spring,river,dam,sand abstraction,other',
             'water_source_other' => 'nullable|string|max:255',
             'year_established' => 'required|integer|min:1900|max:' . date('Y'),
@@ -164,7 +164,7 @@ class PipedWaterSchemeController extends Controller
             'network_length' => 'required|numeric|min:0',
             'storage_tanks' => 'required|numeric|min:0',
             'stand_pipes_count' => 'required|integer|min:0',
-            'functionality' => 'required|in:Functional,Partially Functional,Non functional',
+            'functionality' => ['required', \Illuminate\Validation\Rule::in(\App\Models\InfrastructureStatus::VALUES)],
             'functionality_issues' => 'nullable|string',
             'households_served' => 'required|integer|min:0',
             'population_served' => 'required|integer|min:0',
@@ -175,7 +175,7 @@ class PipedWaterSchemeController extends Controller
             'committee_trained' => 'nullable|boolean',
             'committee_functional' => 'nullable|boolean',
             'has_revolving_fund' => 'nullable|boolean',
-            'fund_amount' => 'nullable|numeric|min:0',
+            'fund_amount' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
             'committee_members_total' => 'nullable|integer|min:0',
             'committee_women' => 'nullable|integer|min:0',
             'committee_men' => 'nullable|integer|min:0',

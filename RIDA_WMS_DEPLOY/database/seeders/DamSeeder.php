@@ -16,8 +16,9 @@ class DamSeeder extends Seeder
             return;
         }
 
-        $users = User::all();
+        $users = User::where('role', 'operator')->get();
         $userIds = $users->pluck('id')->toArray();
+        $approver = User::where('role', 'supervisor')->firstOrFail();
 
         $provinces = config('zimbabwe.provinces');
         $bounds = config('zimbabwe.bounds');
@@ -26,19 +27,21 @@ class DamSeeder extends Seeder
 
         // Create 8 dams
         for ($i = 1; $i <= 8; $i++) {
-            $province = array_rand($provinces);
-            $district = $provinces[$province][array_rand($provinces[$province])];
+            $location = app(\App\Services\ZimbabweLocations::class)->sample($i);
+            $province = $location['province'];
+            $district = $location['district'];
 
             $dams[] = [
                 'name' => 'Dam ' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'dam_code' => 'UAT-DAM-' . str_pad($i, 3, '0', STR_PAD_LEFT),
                 'village' => 'Village ' . chr(65 + $i),
-                'ward' => 'Ward ' . rand(1, 8),
+                'ward' => $location['ward'],
                 'district' => $district,
                 'province' => $province,
                 
                 // Location
-                'latitude' => $bounds['lat_min'] + (rand(0, 1000) / 1000) * ($bounds['lat_max'] - $bounds['lat_min']),
-                'longitude' => $bounds['lng_min'] + (rand(0, 1000) / 1000) * ($bounds['lng_max'] - $bounds['lng_min']),
+                'latitude' => $location['latitude'],
+                'longitude' => $location['longitude'],
                 
                 // Dam Wall Details
                 'wall_length' => rand(50, 200),
@@ -62,7 +65,7 @@ class DamSeeder extends Seeder
                 
                 // System Fields
                 'created_by' => $userIds[array_rand($userIds)],
-                'approved_by' => $userIds[array_rand($userIds)],
+                'approved_by' => $approver->id,
                 'approved_at' => Carbon::now()->subDays(rand(1, 30)),
                 'general_comments' => 'Dam used for irrigation and livestock',
                 'created_at' => Carbon::now()->subDays(rand(1, 365)),

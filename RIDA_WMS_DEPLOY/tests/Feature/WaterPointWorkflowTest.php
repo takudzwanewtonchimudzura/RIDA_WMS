@@ -20,8 +20,8 @@ class WaterPointWorkflowTest extends TestCase
             $this->post(route('water-points.store'), [
                 'name' => "Test borehole {$index}",
                 'village_name' => "Village {$index}",
-                'ward' => (string) $index,
-                'type_of_water_source' => 'Borehole',
+                ...$this->location(index: $index),
+                'type_of_water_source' => 'Well',
                 'functionality' => 'Functional',
             ])->assertRedirect(route('water-points.index'));
         }
@@ -36,8 +36,8 @@ class WaterPointWorkflowTest extends TestCase
         $this->put(route('water-points.update', $point), [
             'name' => 'Updated water point',
             'village_name' => 'Chigo A',
-            'ward' => '1',
-            'type_of_water_source' => 'Borehole',
+            ...$this->location(index: 1),
+            'type_of_water_source' => 'Well',
             'functionality' => 'Partially Functional',
         ])->assertRedirect(route('water-points.index'));
 

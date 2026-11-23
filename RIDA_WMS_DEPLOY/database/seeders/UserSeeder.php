@@ -18,8 +18,8 @@ class UserSeeder extends Seeder
             return;
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 12) {
-            $this->command?->error('Bootstrap admin requires a valid email and a password of at least 12 characters.');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !str_ends_with(strtolower($email), '@rida.gov.zw') || strlen($password) < 12) {
+            $this->command?->error('Bootstrap admin requires an @rida.gov.zw email and a password of at least 12 characters.');
             return;
         }
 
@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
             }
 
             if (filter_var(env('INITIAL_ADMIN_RESET_PASSWORD', false), FILTER_VALIDATE_BOOLEAN)) {
-                $existingUser->update(['password' => Hash::make($password)]);
+                app(\App\Services\AccountPasswords::class)->update($existingUser, $password, 'bootstrap_password_reset');
                 $this->command?->info("Administrator password reset for {$email}.");
                 return;
             }

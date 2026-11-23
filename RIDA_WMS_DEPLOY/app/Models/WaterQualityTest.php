@@ -37,21 +37,26 @@ class WaterQualityTest extends Model
 
     public function tester(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'tested_by');
+        return $this->belongsTo(User::class, 'tested_by')->withTrashed();
     }
 
     public function getOverallQualityAttribute(): string
     {
-        if ($this->ph === null && $this->turbidity_ntu === null && $this->ecoli_cfu_100ml === null) {
+        $limits = \App\Services\WaterQuality::limits();
+        if ($this->ph === null && $this->turbidity_ntu === null && $this->ecoli_cfu_100ml === null && $this->tds_mg_l === null) {
             return 'Not Tested';
         }
 
-        if (($this->ph !== null && ($this->ph < 6.5 || $this->ph > 8.5)) ||
-            ($this->turbidity_ntu !== null && $this->turbidity_ntu > 5) ||
+        if (($this->ph !== null && ($this->ph < $limits['ph_min'] || $this->ph > $limits['ph_max'])) ||
+            ($this->turbidity_ntu !== null && ($this->turbidity_ntu < 0 || $this->turbidity_ntu > $limits['turbidity_max'])) ||
+            ($this->tds_mg_l !== null && ($this->tds_mg_l < 0 || $this->tds_mg_l > $limits['tds_max'])) ||
             ($this->ecoli_cfu_100ml !== null && $this->ecoli_cfu_100ml > 0)) {
             return 'Needs Attention';
         }
 
-        return 'Meets Standards';
+        if ($this->ph === null || $this->turbidity_ntu === null || $this->ecoli_cfu_100ml === null || $this->tds_mg_l === null) {
+            return 'Incomplete Test';
+        }
+        return 'Meets Recorded Limits';
     }
 }

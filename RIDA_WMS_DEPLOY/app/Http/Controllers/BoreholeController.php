@@ -27,7 +27,7 @@ class BoreholeController extends Controller
     {
         $query = Borehole::with(['creator', 'approver'])
             ->withCount(['geologyLayers', 'casingDetails'])
-            ->latest();
+            ->orderBy('borehole_serial_no');
         $this->scopeRecordsToOwner($request, $query);
 
         // Search functionality
@@ -66,8 +66,9 @@ class BoreholeController extends Controller
             $query->where('date', '<=', $request->input('date_to'));
         }
 
-        $perPage = $request->input('per_page', 20);
-        $boreholes = $query->paginate($perPage);
+        $request->validate(['per_page' => 'nullable|integer|between:1,100']);
+        $perPage = $request->input('per_page') ?: config('rwims.default_page_size');
+        $boreholes = $query->paginate($perPage)->withQueryString();
 
         // Get unique provinces for filter dropdown
         $provinces = $this->scopeRecordsToOwner($request, Borehole::query())
@@ -116,10 +117,13 @@ class BoreholeController extends Controller
             $this->normalizeConsumableRows($request);
             $data = $this->validateBoreholeData($request);
             $data['created_by'] = Auth::id();
+            if ($prospectingSite) {
+                $this->validateSurveyLocation($data, $prospectingSite);
+            }
 
             $borehole = Borehole::create($data);
             if ($prospectingSite) {
-                $prospectingSite->update(['status' => 'drilled']);
+                $prospectingSite->markDrilled($request->user(), $request->input('drilled_at'));
             }
 
             if ($request->has('geology_layers')) {
@@ -141,6 +145,9 @@ class BoreholeController extends Controller
                 'borehole' => $borehole
             ], 201);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -255,6 +262,12 @@ class BoreholeController extends Controller
             $this->normalizeBitSizeIntervals($request);
             // Validate main borehole data
             $validated = $this->validateBoreholeData($request, $borehole->id);
+            if ($request->has('prospecting_site_id') && (int) ($validated['prospecting_site_id'] ?? 0) !== (int) $borehole->prospecting_site_id) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['prospecting_site_id' => 'The prospecting survey link cannot be changed after capture.']);
+            }
+            if ($borehole->prospecting_site_id) {
+                $this->validateSurveyLocation($validated, ProspectingSite::findOrFail($borehole->prospecting_site_id));
+            }
 
             // Add updated_by user
             $validated['updated_by'] = Auth::id();
@@ -275,6 +288,9 @@ class BoreholeController extends Controller
             return redirect()->route('boreholes.show', $borehole)
                 ->with('success', 'Borehole record updated successfully!');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -364,7 +380,7 @@ class BoreholeController extends Controller
         $boreholes = Borehole::onlyTrashed()
             ->with(['creator', 'approver'])
             ->latest()
-            ->paginate(20);
+            ->paginate(config('rwims.default_page_size'));
 
         return view('boreholes.trashed', compact('boreholes'));
     }
@@ -374,7 +390,7 @@ class BoreholeController extends Controller
      */
     public function approve(Request $request, Borehole $borehole)
     {
-        $this->authorizeAdministrator($request);
+        $this->authorizeApproval($request, $borehole);
         // Check if already approved
         if ($borehole->approved_at) {
             return redirect()->route('boreholes.show', $borehole)
@@ -401,7 +417,7 @@ class BoreholeController extends Controller
      */
     public function unapprove(Request $request, Borehole $borehole)
     {
-        $this->authorizeAdministrator($request);
+        $this->authorizeApproval($request, $borehole);
         if (!$borehole->approved_at) {
             return redirect()->route('boreholes.show', $borehole)
                 ->with('info', 'Borehole is not approved.');
@@ -547,6 +563,20 @@ class BoreholeController extends Controller
         return view('boreholes.statistics', compact('stats'));
     }
 
+    private function validateSurveyLocation(array $data, ProspectingSite $site): void
+    {
+        foreach (['province' => 'province', 'admin_district' => 'district', 'ward' => 'ward'] as $field => $source) {
+            if ($data[$field] !== $site->{$source}) {
+                throw \Illuminate\Validation\ValidationException::withMessages([$field => 'Location must match the approved prospecting survey.']);
+            }
+        }
+        foreach (['latitude', 'longitude'] as $field) {
+            if ($site->{$field} !== null && (!isset($data[$field]) || abs((float) $data[$field] - (float) $site->{$field}) > 0.00001)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([$field => 'GPS must match the approved prospecting survey.']);
+            }
+        }
+    }
+
     /**
      * Validate borehole data.
      */
@@ -560,10 +590,9 @@ class BoreholeController extends Controller
                 Rule::unique('boreholes')->ignore($excludeId),
             ],
             'prospecting_site_id' => 'nullable|exists:prospecting_sites,id',
-            'province' => 'required|string|max:255',
-            'admin_district' => 'required|string|max:255',
+            'drilled_at' => 'required_with:prospecting_site_id|nullable|date|before_or_equal:now',
+            ...app(\App\Services\ZimbabweLocations::class)->rules('admin_district'),
             'locality' => 'required|string|max:255',
-            'ward' => 'required|string|max:255',
             'village' => 'nullable|string|max:255',
             'vidco' => 'nullable|string|max:255',
             'usage' => 'nullable|string|max:255',
@@ -578,8 +607,6 @@ class BoreholeController extends Controller
             'pisp_specification' => 'nullable|string|max:255',
             'drilling_date_from' => 'nullable|date',
             'drilling_date_to' => 'nullable|date|after_or_equal:drilling_date_from',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
             'grid_reference' => 'nullable|string|max:255',
             'elevation' => 'nullable|string|max:255',
             'first_drilled_diameter_mm' => 'nullable|integer|min:0',
@@ -639,8 +666,8 @@ class BoreholeController extends Controller
             'project_name' => 'nullable|string|max:255',
             'contractor' => 'nullable|string|max:255',
             'number_of_beneficiaries' => 'nullable|integer|min:0',
-            'total_cost' => 'nullable|numeric|min:0',
-            'cost_currency' => 'nullable|string|max:10',
+            'total_cost' => 'nullable|numeric|min:0|max:' . config('rwims.capture_cost_limit'),
+            'cost_currency' => 'required_with:total_cost|nullable|in:USD',
             'drilling_supervisor' => 'nullable|string|max:255',
             'hydrogeologist' => 'nullable|string|max:255',
             'technician' => 'nullable|string|max:255',
@@ -690,8 +717,8 @@ class BoreholeController extends Controller
             'drilling_date_to.after_or_equal' => 'Drilling end date must be after or equal to start date.',
             'drilling_end_date.after_or_equal' => 'Drilling end date must be after or equal to start date.',
             'ph.between' => 'pH value must be between 0 and 14.',
-            'latitude.between' => 'Latitude must be between -90 and 90.',
-            'longitude.between' => 'Longitude must be between -180 and 180.',
+            'latitude.between' => 'Latitude must be inside Zimbabwe.',
+            'longitude.between' => 'Longitude must be inside Zimbabwe.',
         ];
 
         return $request->validate($rules, $messages);

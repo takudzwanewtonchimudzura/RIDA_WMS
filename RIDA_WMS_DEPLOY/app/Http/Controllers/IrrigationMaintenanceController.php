@@ -14,7 +14,7 @@ class IrrigationMaintenanceController extends Controller
     public function index(Request $request)
     {
         $query = $this->scopeRecordsToOwner($request, IrrigationMaintenance::with('irrigationScheme')->latest('date_repaired'));
-        $maintenances = $query->paginate(20)->withQueryString();
+        $maintenances = $query->paginate(config('rwims.default_page_size'))->withQueryString();
 
         return view('irrigation-maintenances.index', compact('maintenances'));
     }

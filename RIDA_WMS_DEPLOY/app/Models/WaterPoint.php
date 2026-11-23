@@ -8,13 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WaterPoint extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
 
     protected $fillable = [
         // Basic Information
         'name',
         'village_name',
         'ward',
+        'province',
+        'district',
+        'borehole_id',
         
         // Location
         'latitude',
@@ -86,6 +89,11 @@ class WaterPoint extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function borehole()
+    {
+        return $this->belongsTo(Borehole::class);
+    }
 
     /**
      * Get the total population served.

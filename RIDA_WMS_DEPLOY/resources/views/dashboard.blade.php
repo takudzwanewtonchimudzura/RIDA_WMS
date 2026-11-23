@@ -243,6 +243,7 @@
                                     Turbidity (NTU)
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $water_quality['current_turbidity'] ?? 'No data' }}</div>
+                                <small class="{{ ($water_quality['current_turbidity'] ?? 0) > config('rwims.turbidity_max') ? 'text-danger' : 'text-muted' }}">Screening limit: {{ config('rwims.turbidity_max') }} NTU{{ ($water_quality['current_turbidity'] ?? 0) > config('rwims.turbidity_max') ? ' — exceeds limit' : '' }}</small>
                             </div>
                         </div>
                     </div>

@@ -59,7 +59,7 @@
                             <td>{{ $scheme->latestQualityTest?->ph ?? 'N/A' }}</td>
                             <td>{{ $scheme->latestQualityTest?->turbidity_ntu ?? 'N/A' }}</td>
                             <td>{{ $scheme->latestQualityTest?->ecoli_cfu_100ml ?? 'N/A' }}</td>
-                            <td><span class="badge bg-{{ ($scheme->latestQualityTest?->overall_quality ?? 'Not Tested') === 'Meets Standards' ? 'success' : (($scheme->latestQualityTest?->overall_quality ?? 'Not Tested') === 'Needs Attention' ? 'warning' : 'secondary') }}">{{ $scheme->latestQualityTest?->overall_quality ?? 'Not Tested' }}</span></td>
+                            <td><span class="badge bg-{{ ($scheme->latestQualityTest?->overall_quality ?? 'Not Tested') === 'Meets Recorded Limits' ? 'success' : (($scheme->latestQualityTest?->overall_quality ?? 'Not Tested') === 'Needs Attention' ? 'warning' : 'secondary') }}">{{ $scheme->latestQualityTest?->overall_quality ?? 'Not Tested' }}</span></td>
                             <td>
                                 <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#testModal{{ $scheme->id }}">
                                     <i class="bi bi-droplet"></i> Test

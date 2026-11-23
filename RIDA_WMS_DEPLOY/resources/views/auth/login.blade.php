@@ -7,7 +7,7 @@
     <section class="auth-visual" aria-label="Water resources">
         <a class="visual-brand" href="{{ url('/') }}" aria-label="RIDA RWIMS home">
             <span class="brand-mark"><img src="{{ asset('images/rida-logo-192.png') }}" alt="RIDA logo"></span>
-            <span>RIDA RWIMS</span>
+            <span>{{ config('rwims.organization_name') }}</span>
         </a>
         <div class="visual-copy">
             <p class="visual-kicker">Water resources information management</p>
@@ -20,7 +20,7 @@
         <div class="auth-content">
             <div class="mobile-brand">
                 <span class="brand-mark"><img src="{{ asset('images/rida-logo-192.png') }}" alt="RIDA logo"></span>
-                <span>RIDA RWIMS</span>
+                <span>{{ config('rwims.organization_name') }}</span>
             </div>
 
             <p class="auth-eyebrow">Secure workspace</p>
@@ -88,7 +88,9 @@
                 <p class="register-link">Need an account? <a href="{{ route('register') }}">Register</a></p>
             @endif
 
-            <footer class="auth-footer">RIDA RWIMS · Water infrastructure management</footer>
+            <footer class="auth-footer">{{ config('rwims.organization_name') }} · Water infrastructure management
+                @if(config('rwims.support_email'))<br><a href="mailto:{{ config('rwims.support_email') }}">Contact support</a>@endif
+            </footer>
         </div>
     </section>
 </main>

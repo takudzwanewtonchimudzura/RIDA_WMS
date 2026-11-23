@@ -26,16 +26,19 @@ class PipedWaterSchemeSeeder extends Seeder
 
         // Create 15 piped water schemes
         for ($i = 1; $i <= 15; $i++) {
-            $ward = $districts[array_rand($districts)];
+            $location = app(\App\Services\ZimbabweLocations::class)->sample($i);
+            $ward = $location['ward'];
             
-            $functionality = ['Functional', 'Partially Functional', 'Non functional'][rand(0, 2)];
+            $functionality = \App\Models\InfrastructureStatus::VALUES[rand(0, 2)];
             $hasCommittee = rand(0, 1);
             $hasFund = rand(0, 1);
 
             $schemes[] = [
-                'name' => $ward . ' Piped Water Scheme ' . $i,
+                'name' => $location['district'] . ' Piped Water Scheme ' . $i,
                 'village' => 'Village ' . chr(65 + $i),
                 'ward' => $ward,
+                'province' => $location['province'],
+                'district' => $location['district'],
                 
                 // Water Source
                 'water_source' => ['borehole', 'spring', 'river', 'dam'][rand(0, 3)],
@@ -65,7 +68,7 @@ class PipedWaterSchemeSeeder extends Seeder
                 'committee_trained' => $hasCommittee ? rand(0, 1) : 0,
                 'committee_functional' => $hasCommittee ? rand(0, 1) : 0,
                 'has_revolving_fund' => $hasFund,
-                'fund_amount' => $hasFund ? rand(500000, 5000000) : null,
+                'fund_amount' => $hasFund ? rand(200, 5000) : null,
                 'committee_members_total' => $hasCommittee ? rand(7, 15) : null,
                 'committee_women' => $hasCommittee ? rand(3, 8) : null,
                 'committee_men' => $hasCommittee ? rand(4, 10) : null,

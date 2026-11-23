@@ -10,7 +10,29 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Borehole extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Concerns\AuditsDeletes;
+
+    public const DEPTH_EXPRESSION = 'COALESCE(final_borehole_depth_m, final_borehole_depth)';
+    public const YIELD_EXPRESSION = 'COALESCE(blowing_yield, yield_lps)';
+
+    public function getRecordedDepthAttribute(): ?float
+    {
+        $value = $this->final_borehole_depth_m ?? $this->final_borehole_depth;
+        return $value === null ? null : (float) $value;
+    }
+
+    public function getRecordedYieldAttribute(): ?float
+    {
+        $value = $this->blowing_yield ?? $this->yield_lps;
+        return $value === null ? null : (float) $value;
+    }
+
+    public function scopeComplete($query)
+    {
+        return $query->whereNotNull('latitude')->whereNotNull('longitude')
+            ->whereRaw(self::DEPTH_EXPRESSION . ' IS NOT NULL')
+            ->whereRaw(self::YIELD_EXPRESSION . ' IS NOT NULL');
+    }
 
     protected $fillable = [
         // General Information
@@ -242,7 +264,7 @@ class Borehole extends Model
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /**
@@ -250,7 +272,7 @@ class Borehole extends Model
      */
     public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
     }
 
     /**
